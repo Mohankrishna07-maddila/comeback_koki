@@ -1972,6 +1972,7 @@
             <!-- Remote Video / Audio Area -->
             <div class="remote-video-container">
               <video id="remoteVideo" autoplay playsinline class="remote-video"></video>
+              <audio id="remoteAudio" autoplay playsinline style="position: absolute; width: 1px; height: 1px; opacity: 0.01; pointer-events: none;"></audio>
               <div id="remoteAudioPlaceholder" class="remote-audio-placeholder" style="display: none">
                 <div class="call-avatar" style="margin-bottom: 1rem">🌹</div>
                 <div style="font-size: 1.3rem; font-weight: 600" id="remoteAudioName">Wife</div>
@@ -2210,7 +2211,7 @@
           },
         };
         var POLL_MS = 3000;
-        var SIGNAL_POLL_MS = 1200;
+        var SIGNAL_POLL_MS = 1000;
 
         function $(id) {
           return document.getElementById(id);
@@ -2454,6 +2455,7 @@
         /* ---------- WebRTC Call Signaling (Supabase) ---------- */
         async function postSignal(callee, callType, signalType, data) {
           if (!live()) return;
+          var safeCallType = callType === "video" ? "video" : "audio";
           try {
             await fetch(SUPABASE_URL + "/rest/v1/call_signals", {
               method: "POST",
@@ -2466,7 +2468,7 @@
               body: JSON.stringify({
                 caller: me,
                 callee: callee,
-                call_type: callType,
+                call_type: safeCallType,
                 signal_type: signalType,
                 data: typeof data === "string" ? data : JSON.stringify(data),
               }),
@@ -2855,7 +2857,7 @@
 
         function broadcastTyping(isTyping) {
           if (!me) return;
-          postSignal(getThem(), "text", "typing", {
+          postSignal(getThem(), "audio", "typing", {
             isTyping: isTyping,
             t: Date.now(),
           });
@@ -2864,14 +2866,14 @@
         function handleTypingInput() {
           checkAndMarkSeenIfVisible();
           var now = Date.now();
-          if (now - lastTypingSentAt > 1800) {
+          if (now - lastTypingSentAt > 1500) {
             lastTypingSentAt = now;
             broadcastTyping(true);
           }
           if (typingDebounceTimeout) clearTimeout(typingDebounceTimeout);
           typingDebounceTimeout = setTimeout(function () {
             broadcastTyping(false);
-          }, 3000);
+          }, 2500);
         }
 
         async function send() {
@@ -3122,11 +3124,20 @@
 
           peerConn.ontrack = function (e) {
             var remoteVideo = $("remoteVideo");
+            var remoteAudio = $("remoteAudio");
             if (e.streams && e.streams[0]) {
               remoteStream = e.streams[0];
             } else if (e.track) {
               if (!remoteStream) remoteStream = new MediaStream();
               remoteStream.addTrack(e.track);
+            }
+            if (remoteAudio) {
+              remoteAudio.srcObject = remoteStream;
+              remoteAudio.muted = false;
+              remoteAudio.volume = 1.0;
+              remoteAudio.play().catch(function (err) {
+                console.warn("Remote audio auto-play catch:", err);
+              });
             }
             if (remoteVideo) {
               remoteVideo.srcObject = remoteStream;
@@ -3154,13 +3165,25 @@
           updateCallUI();
           playRingSound("outgoing");
 
+          var audioConstraints = {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          };
+
           try {
             localStream = await navigator.mediaDevices.getUserMedia({
-              audio: true,
-              video: type === "video" ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" } : false,
+              audio: audioConstraints,
+              video:
+                type === "video"
+                  ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" }
+                  : false,
             });
             var localVideo = $("localVideo");
-            if (localVideo) localVideo.srcObject = localStream;
+            if (localVideo) {
+              localVideo.srcObject = localStream;
+              localVideo.muted = true;
+            }
           } catch (err) {
             console.error("Media devices access error:", err);
             alert(
@@ -3189,16 +3212,25 @@
           if (callState !== "incoming" || !me) return;
           stopRingSound();
 
+          var audioConstraints = {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          };
+
           try {
             localStream = await navigator.mediaDevices.getUserMedia({
-              audio: true,
+              audio: audioConstraints,
               video:
                 currentCallType === "video"
                   ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" }
                   : false,
             });
             var localVideo = $("localVideo");
-            if (localVideo) localVideo.srcObject = localStream;
+            if (localVideo) {
+              localVideo.srcObject = localStream;
+              localVideo.muted = true;
+            }
           } catch (err) {
             console.error("Media devices access error:", err);
             alert("Camera/Microphone permission needed to answer call.");
@@ -3262,6 +3294,8 @@
           if (localVideo) localVideo.srcObject = null;
           var remoteVideo = $("remoteVideo");
           if (remoteVideo) remoteVideo.srcObject = null;
+          var remoteAudio = $("remoteAudio");
+          if (remoteAudio) remoteAudio.srcObject = null;
 
           callState = "idle";
           activeSignalOffer = null;
