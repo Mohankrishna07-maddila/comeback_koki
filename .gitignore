@@ -1,0 +1,14 @@
+# Environment and Secret configuration files
+.env
+.env.local
+.env.*.local
+config.js
+
+# Database connections and secrets
+*.pem
+*.key
+
+# Temporary files and logs
+*.log
+.DS_Store
+Thumbs.db
