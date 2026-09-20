@@ -1606,14 +1606,27 @@
       (function () {
         "use strict";
 
-        // Environment Configuration (Loaded from config.js / window.ENV)
+        // Environment Configuration (Loaded from config.js / window.ENV with fallbacks)
         var env = window.ENV || {};
-        var SUPABASE_URL = env.SUPABASE_URL || "";
-        var SUPABASE_KEY = env.SUPABASE_PUBLISHABLE_KEY || "";
+        var SUPABASE_URL =
+          env.SUPABASE_URL || "https://aossuxdqhqbokkeggkav.supabase.co";
+        var SUPABASE_KEY =
+          env.SUPABASE_PUBLISHABLE_KEY ||
+          "sb_publishable_c81nH78WhyeAOWqg3GrnCg_2NaN8pYh";
 
         var USERS = {
-          husband: { hash: env.HUSBAND_HASH || "", name: "Husband" },
-          wife: { hash: env.WIFE_HASH || "", name: "Wife" },
+          husband: {
+            hash:
+              env.HUSBAND_HASH ||
+              "8d81d83dee8006f70328c68bd67aeb30f9216c55ce164be80608c6e87c6f8360",
+            name: "Husband",
+          },
+          wife: {
+            hash:
+              env.WIFE_HASH ||
+              "837675a995691ce263fb56538a32092f53a3fd8503abd66f2dc9dc5a41be7700",
+            name: "Wife",
+          },
         };
         var POLL_MS = 3000;
 
