@@ -1113,6 +1113,11 @@
         background: rgba(239, 68, 68, 0.4);
         border-color: #ef4444;
       }
+      .call-ctrl-btn.active {
+        background: rgba(212, 61, 90, 0.6);
+        border-color: var(--neon);
+        box-shadow: 0 0 15px rgba(255, 138, 122, 0.4);
+      }
 
 
       /* Role-based portal styling */
@@ -2009,6 +2014,18 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                   <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+              </button>
+              <button
+                id="btnFlipCam"
+                type="button"
+                class="call-ctrl-btn"
+                title="Switch Camera (Front / Back)"
+                aria-label="Switch Camera Front and Back"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 10c0-4.418-3.582-8-8-8s-8 3.582-8 8c0 1.57.45 3.03 1.23 4.27L3 17h5v-5l-1.8 1.8A5.96 5.96 0 0 1 6 10c0-3.314 2.686-6 6-6s6 2.686 6 6c0 2.38-1.39 4.44-3.41 5.41l.89 1.79C18.15 15.82 20 13.12 20 10z"/>
+                  <path d="M12 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
                 </svg>
               </button>
               <button
@@ -3068,11 +3085,15 @@
             var remotePlaceholder = $("remoteAudioPlaceholder");
             var remoteVideoEl = $("remoteVideo");
             var localVideoContainer = $("localVideoContainer");
+            var btnFlipCam = $("btnFlipCam");
+            var btnToggleCam = $("btnToggleCam");
 
             if (currentCallType === "video") {
               remoteVideoEl.style.display = "block";
               remotePlaceholder.style.display = "none";
               localVideoContainer.style.display = "block";
+              if (btnFlipCam) btnFlipCam.style.display = "flex";
+              if (btnToggleCam) btnToggleCam.style.display = "flex";
               if (remoteStream && remoteVideoEl.srcObject !== remoteStream) {
                 remoteVideoEl.srcObject = remoteStream;
               }
@@ -3085,6 +3106,8 @@
               remotePlaceholder.style.display = "flex";
               $("remoteAudioName").textContent = partnerName;
               localVideoContainer.style.display = "none";
+              if (btnFlipCam) btnFlipCam.style.display = "none";
+              if (btnToggleCam) btnToggleCam.style.display = "none";
             }
           }
         }
@@ -3187,6 +3210,8 @@
           }
         }
 
+        var currentFacingMode = "user"; // 'user' (front) | 'environment' (back)
+
         async function getMediaStream(withVideo) {
           var audioConstraints = {
             echoCancellation: true,
@@ -3203,7 +3228,7 @@
             return await navigator.mediaDevices.getUserMedia({
               audio: audioConstraints,
               video: {
-                facingMode: "user",
+                facingMode: { ideal: currentFacingMode },
                 width: { ideal: 1280, max: 1920 },
                 height: { ideal: 720, max: 1080 },
               },
@@ -3213,12 +3238,80 @@
             try {
               return await navigator.mediaDevices.getUserMedia({
                 audio: audioConstraints,
-                video: true,
+                video: { facingMode: currentFacingMode },
               });
             } catch (e2) {
               console.error("Camera access failed completely:", e2);
               throw e2;
             }
+          }
+        }
+
+        async function flipCam() {
+          if (!localStream || currentCallType !== "video") return;
+          var nextFacingMode =
+            currentFacingMode === "user" ? "environment" : "user";
+          var newStream = null;
+
+          try {
+            try {
+              newStream = await navigator.mediaDevices.getUserMedia({
+                audio: false,
+                video: {
+                  facingMode: { exact: nextFacingMode },
+                  width: { ideal: 1280, max: 1920 },
+                  height: { ideal: 720, max: 1080 },
+                },
+              });
+            } catch (e1) {
+              newStream = await navigator.mediaDevices.getUserMedia({
+                audio: false,
+                video: { facingMode: nextFacingMode },
+              });
+            }
+
+            var newVideoTrack = newStream.getVideoTracks()[0];
+            if (!newVideoTrack) return;
+
+            var oldVideoTrack = localStream.getVideoTracks()[0];
+
+            if (peerConn) {
+              var senders = peerConn.getSenders();
+              for (var i = 0; i < senders.length; i++) {
+                if (senders[i].track && senders[i].track.kind === "video") {
+                  await senders[i].replaceTrack(newVideoTrack);
+                  break;
+                }
+              }
+            }
+
+            if (oldVideoTrack) {
+              oldVideoTrack.stop();
+              localStream.removeTrack(oldVideoTrack);
+            }
+
+            localStream.addTrack(newVideoTrack);
+            currentFacingMode = nextFacingMode;
+
+            var localVideo = $("localVideo");
+            if (localVideo) {
+              localVideo.srcObject = localStream;
+              localVideo.style.transform =
+                currentFacingMode === "user" ? "scaleX(-1)" : "scaleX(1)";
+            }
+
+            var btnFlip = $("btnFlipCam");
+            if (btnFlip) {
+              btnFlip.classList.toggle(
+                "active",
+                currentFacingMode === "environment",
+              );
+            }
+          } catch (err) {
+            console.error("Flip camera error:", err);
+            alert(
+              "Unable to switch camera. Back camera may not be available on this device.",
+            );
           }
         }
 
@@ -3235,6 +3328,8 @@
             if (localVideo) {
               localVideo.srcObject = localStream;
               localVideo.muted = true;
+              localVideo.style.transform =
+                currentFacingMode === "user" ? "scaleX(-1)" : "scaleX(1)";
               localVideo.play().catch(function () {});
             }
           } catch (err) {
@@ -3271,6 +3366,8 @@
             if (localVideo) {
               localVideo.srcObject = localStream;
               localVideo.muted = true;
+              localVideo.style.transform =
+                currentFacingMode === "user" ? "scaleX(-1)" : "scaleX(1)";
               localVideo.play().catch(function () {});
             }
           } catch (err) {
@@ -3332,8 +3429,12 @@
             } catch (e) {}
             peerConn = null;
           }
+          currentFacingMode = "user";
           var localVideo = $("localVideo");
-          if (localVideo) localVideo.srcObject = null;
+          if (localVideo) {
+            localVideo.srcObject = null;
+            localVideo.style.transform = "scaleX(-1)";
+          }
           var remoteVideo = $("remoteVideo");
           if (remoteVideo) remoteVideo.srcObject = null;
           var remoteAudio = $("remoteAudio");
@@ -3561,6 +3662,7 @@
         });
         $("btnToggleMic").addEventListener("click", toggleMic);
         $("btnToggleCam").addEventListener("click", toggleCam);
+        $("btnFlipCam").addEventListener("click", flipCam);
 
         /* ---------- Dynamic Media Base URL (Supabase Storage / CDN) ---------- */
         function applyMediaBaseUrl() {
