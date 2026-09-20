@@ -731,6 +731,55 @@
       .btn-cancel-edit:hover {
         color: #fff;
       }
+      .chat-typing-indicator {
+        display: none;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.35rem 0.85rem;
+        margin: 0.4rem 1.2rem 0.1rem;
+        background: rgba(90, 24, 48, 0.5);
+        border: 1px solid rgba(255, 138, 122, 0.25);
+        border-radius: 14px;
+        border-bottom-left-radius: 4px;
+        font-size: 0.78rem;
+        color: var(--glow);
+        width: fit-content;
+        animation: fadeIn 0.25s ease;
+      }
+      .typing-dots {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .typing-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--glow);
+        opacity: 0.4;
+        animation: typingDotPulse 1.4s infinite ease-in-out both;
+      }
+      .typing-dot:nth-child(1) {
+        animation-delay: -0.32s;
+      }
+      .typing-dot:nth-child(2) {
+        animation-delay: -0.16s;
+      }
+      .typing-dot:nth-child(3) {
+        animation-delay: 0s;
+      }
+      @keyframes typingDotPulse {
+        0%,
+        80%,
+        100% {
+          transform: scale(0.6);
+          opacity: 0.3;
+        }
+        40% {
+          transform: scale(1.2);
+          opacity: 1;
+        }
+      }
       .chat-form {
         display: flex;
         gap: 0.7rem;
@@ -1747,6 +1796,18 @@
               </div>
             </div>
             <div id="chatLog" class="chat-log" aria-live="polite"></div>
+            <div
+              id="chatTypingIndicator"
+              class="chat-typing-indicator"
+              style="display: none"
+            >
+              <span id="typingUserName">Koki is typing</span>
+              <span class="typing-dots">
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+              </span>
+            </div>
             <div id="chatStatus" class="chat-status"></div>
             <div id="editBanner" class="edit-banner" style="display: none">
               <span>Editing message...</span>
@@ -2748,7 +2809,7 @@
             }
           }
 
-          if (unreadFromThem && me) {
+          if (unreadFromThem && me && isChatVisibleToUser()) {
             markMessagesAsRead(getThem());
           }
 
@@ -2758,12 +2819,71 @@
           draw(items);
         }
 
+        function isChatVisibleToUser() {
+          if (document.hidden) return false;
+          var portalEl = $("portal");
+          var chatEl = $("chat");
+          if (!portalEl || portalEl.hidden || !me || !chatEl) return false;
+
+          // If role is husband, his portal is dedicated to the chat
+          if (me === "husband") return true;
+
+          // For wife, verify that the chat section is scrolled into the active viewport
+          var rect = chatEl.getBoundingClientRect();
+          var windowHeight =
+            window.innerHeight || document.documentElement.clientHeight;
+          return rect.top < windowHeight * 0.9 && rect.bottom > windowHeight * 0.1;
+        }
+
+        function checkAndMarkSeenIfVisible() {
+          if (me && isChatVisibleToUser()) {
+            lastSig = "";
+            refresh();
+          }
+        }
+
+        window.addEventListener("focus", checkAndMarkSeenIfVisible);
+        document.addEventListener("visibilitychange", function () {
+          if (!document.hidden) checkAndMarkSeenIfVisible();
+        });
+        window.addEventListener("scroll", checkAndMarkSeenIfVisible, {
+          passive: true,
+        });
+
+        var lastTypingSentAt = 0;
+        var typingDebounceTimeout = null;
+
+        function broadcastTyping(isTyping) {
+          if (!me) return;
+          postSignal(getThem(), "text", "typing", {
+            isTyping: isTyping,
+            t: Date.now(),
+          });
+        }
+
+        function handleTypingInput() {
+          checkAndMarkSeenIfVisible();
+          var now = Date.now();
+          if (now - lastTypingSentAt > 1800) {
+            lastTypingSentAt = now;
+            broadcastTyping(true);
+          }
+          if (typingDebounceTimeout) clearTimeout(typingDebounceTimeout);
+          typingDebounceTimeout = setTimeout(function () {
+            broadcastTyping(false);
+          }, 3000);
+        }
+
         async function send() {
           var input = $("chatInput");
           var text = input.value.trim();
           if ((!text && !pendingImage) || !me) return;
           busy = true;
           $("chatSend").disabled = true;
+
+          // Clear active typing indicator immediately
+          if (typingDebounceTimeout) clearTimeout(typingDebounceTimeout);
+          broadcastTyping(false);
 
           try {
             if (editingMessage) {
@@ -2801,6 +2921,8 @@
           refresh();
         }
         $("chatSend").addEventListener("click", send);
+        $("chatInput").addEventListener("input", handleTypingInput);
+        $("chatInput").addEventListener("focus", checkAndMarkSeenIfVisible);
         $("chatInput").addEventListener("keydown", function (e) {
           if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
@@ -3289,9 +3411,45 @@
                 endCall(false);
               }
             }
+            // Handle real-time typing animation signal
+            else if (sig.signal_type === "typing") {
+              if (sigData && sigData.isTyping && ageMs < 6000) {
+                showTypingIndicator();
+              } else {
+                hideTypingIndicator();
+              }
+            }
 
             // Clean up processed signal
             deleteSignal(sig.id);
+          }
+        }
+
+        var typingHideTimer = null;
+        function showTypingIndicator() {
+          var typingEl = $("chatTypingIndicator");
+          var typingUserEl = $("typingUserName");
+          if (!typingEl) return;
+          var partner =
+            (USERS[getThem()] && USERS[getThem()].name) || "Partner";
+          if (typingUserEl) typingUserEl.textContent = partner + " is typing";
+          typingEl.style.display = "inline-flex";
+
+          var log = $("chatLog");
+          if (log && log.scrollHeight - log.scrollTop - log.clientHeight < 120) {
+            log.scrollTop = log.scrollHeight;
+          }
+
+          if (typingHideTimer) clearTimeout(typingHideTimer);
+          typingHideTimer = setTimeout(hideTypingIndicator, 4500);
+        }
+
+        function hideTypingIndicator() {
+          var typingEl = $("chatTypingIndicator");
+          if (typingEl) typingEl.style.display = "none";
+          if (typingHideTimer) {
+            clearTimeout(typingHideTimer);
+            typingHideTimer = null;
           }
         }
 
