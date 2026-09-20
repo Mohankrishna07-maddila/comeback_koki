@@ -2,6 +2,8 @@
 .env
 .env.local
 .env.*.local
+config.js
+public/config.js
 
 # Database connections and secrets
 *.pem
@@ -12,3 +14,10 @@
 .DS_Store
 Thumbs.db
 
+# Media & Personal Photos (Kept private, not pushed to GitHub)
+images/
+public/images/
+*.jpg
+*.jpeg
+*.png
+*.mp4

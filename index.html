@@ -3562,6 +3562,40 @@
         $("btnToggleMic").addEventListener("click", toggleMic);
         $("btnToggleCam").addEventListener("click", toggleCam);
 
+        /* ---------- Dynamic Media Base URL (Supabase Storage / CDN) ---------- */
+        function applyMediaBaseUrl() {
+          var mediaBase = (window.ENV && window.ENV.MEDIA_BASE_URL) || "";
+          if (!mediaBase) return;
+          if (!mediaBase.endsWith("/")) mediaBase += "/";
+
+          document.querySelectorAll(".gallery-grid img, .memory-photo-card img").forEach(function (img) {
+            var src = img.getAttribute("src");
+            if (src && src.startsWith("images/")) {
+              var filename = src.replace(/^images\//, "");
+              img.src = mediaBase + encodeURIComponent(filename).replace(/%2F/g, "/");
+            }
+          });
+
+          var vid = $("memoryVideo");
+          if (vid) {
+            var poster = vid.getAttribute("poster");
+            if (poster && poster.startsWith("images/")) {
+              var pName = poster.replace(/^images\//, "");
+              vid.poster = mediaBase + encodeURIComponent(pName).replace(/%2F/g, "/");
+            }
+            var srcEl = vid.querySelector("source");
+            if (srcEl) {
+              var vsrc = srcEl.getAttribute("src");
+              if (vsrc && vsrc.startsWith("images/")) {
+                var vName = vsrc.replace(/^images\//, "");
+                srcEl.src = mediaBase + encodeURIComponent(vName).replace(/%2F/g, "/");
+                vid.load();
+              }
+            }
+          }
+        }
+        applyMediaBaseUrl();
+
         /* ---------- login / logout ---------- */
         function showPortal() {
           $("login").hidden = true;
