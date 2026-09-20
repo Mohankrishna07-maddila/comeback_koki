@@ -2816,7 +2816,13 @@
           iceServers: [
             { urls: "stun:stun.l.google.com:19302" },
             { urls: "stun:stun1.l.google.com:19302" },
+            { urls: "stun:stun2.l.google.com:19302" },
+            { urls: "stun:stun3.l.google.com:19302" },
+            { urls: "stun:stun4.l.google.com:19302" },
+            { urls: "stun:stun.services.mozilla.com" },
+            { urls: "stun:global.stun.twilio.com:3478" },
           ],
+          iceCandidatePoolSize: 10,
         };
 
         var callState = "idle"; // idle | outgoing | incoming | connected
@@ -2830,6 +2836,7 @@
         var ringOscillator = null;
         var pendingIceCandidates = [];
         var activeSignalId = null;
+        var activeSignalOffer = null;
 
         function playRingSound(type) {
           try {
@@ -2905,7 +2912,6 @@
           }
 
           modal.style.display = "flex";
-          // Trigger reflow for smooth fade-in
           modal.offsetWidth;
           modal.classList.add("active");
 
@@ -2952,13 +2958,43 @@
           }
         }
 
+        async function drainPendingIceCandidates() {
+          if (!peerConn || !peerConn.remoteDescription) return;
+          while (pendingIceCandidates.length > 0) {
+            var cand = pendingIceCandidates.shift();
+            try {
+              await peerConn.addIceCandidate(new RTCIceCandidate(cand));
+            } catch (err) {
+              console.warn("Drain ICE candidate error:", err);
+            }
+          }
+        }
+
         async function createPeerConnection() {
+          if (peerConn) {
+            try {
+              peerConn.close();
+            } catch (e) {}
+            peerConn = null;
+          }
+
           peerConn = new RTCPeerConnection(RTC_CONFIG);
           pendingIceCandidates = [];
+          remoteStream = new MediaStream();
+
+          var remoteVideo = $("remoteVideo");
+          if (remoteVideo) {
+            remoteVideo.srcObject = remoteStream;
+          }
 
           peerConn.onicecandidate = function (e) {
             if (e.candidate) {
-              postSignal(getThem(), currentCallType, "candidate", e.candidate);
+              postSignal(
+                getThem(),
+                currentCallType,
+                "candidate",
+                e.candidate.toJSON(),
+              );
             }
           };
 
@@ -2966,18 +3002,20 @@
             var remoteVideo = $("remoteVideo");
             if (e.streams && e.streams[0]) {
               remoteStream = e.streams[0];
+            } else if (e.track) {
+              if (!remoteStream) remoteStream = new MediaStream();
+              remoteStream.addTrack(e.track);
+            }
+            if (remoteVideo) {
               remoteVideo.srcObject = remoteStream;
+              remoteVideo.play().catch(function (err) {
+                console.warn("Remote video auto-play catch:", err);
+              });
             }
           };
 
-          peerConn.onconnectionstatechange = function () {
-            if (
-              peerConn.connectionState === "disconnected" ||
-              peerConn.connectionState === "failed" ||
-              peerConn.connectionState === "closed"
-            ) {
-              endCall(false);
-            }
+          peerConn.oniceconnectionstatechange = function () {
+            console.log("ICE Connection State:", peerConn ? peerConn.iceConnectionState : "closed");
           };
 
           if (localStream) {
@@ -2997,14 +3035,14 @@
           try {
             localStream = await navigator.mediaDevices.getUserMedia({
               audio: true,
-              video: type === "video" ? { width: 1280, height: 720 } : false,
+              video: type === "video" ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" } : false,
             });
             var localVideo = $("localVideo");
-            localVideo.srcObject = localStream;
+            if (localVideo) localVideo.srcObject = localStream;
           } catch (err) {
             console.error("Media devices access error:", err);
             alert(
-              "Unable to access camera/microphone. Please grant camera/microphone permissions in your browser.",
+              "Unable to access camera/microphone. Please check device permissions.",
             );
             endCall(true);
             return;
@@ -3013,7 +3051,10 @@
           await createPeerConnection();
 
           try {
-            var offer = await peerConn.createOffer();
+            var offer = await peerConn.createOffer({
+              offerToReceiveAudio: true,
+              offerToReceiveVideo: type === "video",
+            });
             await peerConn.setLocalDescription(offer);
             await postSignal(getThem(), type, "offer", offer);
           } catch (err) {
@@ -3031,11 +3072,11 @@
               audio: true,
               video:
                 currentCallType === "video"
-                  ? { width: 1280, height: 720 }
+                  ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" }
                   : false,
             });
             var localVideo = $("localVideo");
-            localVideo.srcObject = localStream;
+            if (localVideo) localVideo.srcObject = localStream;
           } catch (err) {
             console.error("Media devices access error:", err);
             alert("Camera/Microphone permission needed to answer call.");
@@ -3050,11 +3091,7 @@
               await peerConn.setRemoteDescription(
                 new RTCSessionDescription(activeSignalOffer),
               );
-              // Process queued candidates
-              while (pendingIceCandidates.length > 0) {
-                var cand = pendingIceCandidates.shift();
-                await peerConn.addIceCandidate(new RTCIceCandidate(cand));
-              }
+              await drainPendingIceCandidates();
             }
             var answer = await peerConn.createAnswer();
             await peerConn.setLocalDescription(answer);
@@ -3094,7 +3131,9 @@
             localStream = null;
           }
           if (peerConn) {
-            peerConn.close();
+            try {
+              peerConn.close();
+            } catch (e) {}
             peerConn = null;
           }
           var localVideo = $("localVideo");
@@ -3137,7 +3176,6 @@
           }
         }
 
-        var activeSignalOffer = null;
         var originalDocTitle = document.title || "Rebuilding Us";
         var flashTitleInterval = null;
 
@@ -3221,6 +3259,7 @@
                   await peerConn.setRemoteDescription(
                     new RTCSessionDescription(sigData),
                   );
+                  await drainPendingIceCandidates();
                   callState = "connected";
                   startCallTimer();
                   updateCallUI();
@@ -3231,7 +3270,7 @@
             }
             // Handle ICE Candidate
             else if (sig.signal_type === "candidate" && sigData) {
-              if (peerConn && peerConn.remoteDescription) {
+              if (peerConn && peerConn.remoteDescription && peerConn.remoteDescription.type) {
                 try {
                   await peerConn.addIceCandidate(
                     new RTCIceCandidate(sigData),
