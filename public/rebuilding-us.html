@@ -1,0 +1,2181 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Rebuilding Us</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=DM+Sans:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="config.js"></script>
+    <style>
+      :root {
+        color-scheme: dark;
+        --midnight: #0c0509;
+        --wine: #2a0b16;
+        --rose: #5a1830;
+        --crimson: #d43d5a;
+        --neon: #ff8a7a;
+        --glow: #ffc0a8;
+        --text: #f6e6ea;
+        --muted: #c9a5b0;
+        box-sizing: border-box;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      :root[data-theme="light"],
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          color-scheme: dark;
+        }
+      }
+      html {
+        scroll-behavior: smooth;
+        scroll-padding-top: env(safe-area-inset-top, 0px);
+      }
+      body {
+        margin: 0;
+        background: var(--midnight);
+        color: var(--text);
+        font-family:
+          "DM Sans",
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+        line-height: 1.65;
+        overflow-x: hidden;
+      }
+      .script {
+        font-family: "Caveat", "Segoe Script", "Bradley Hand", cursive;
+      }
+      .page-glow {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background:
+          radial-gradient(
+            60% 45% at 50% 0%,
+            rgba(212, 61, 90, 0.22),
+            transparent 70%
+          ),
+          radial-gradient(
+            50% 40% at 90% 60%,
+            rgba(90, 24, 48, 0.55),
+            transparent 70%
+          ),
+          radial-gradient(
+            45% 35% at 5% 85%,
+            rgba(90, 24, 48, 0.45),
+            transparent 70%
+          );
+      }
+      #hearts {
+        position: fixed;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+        overflow: hidden;
+      }
+      .heart {
+        position: absolute;
+        bottom: -40px;
+        opacity: 0;
+        color: var(--crimson);
+        animation: floatUp linear infinite;
+        text-shadow: 0 0 12px rgba(255, 138, 122, 0.5);
+      }
+      @keyframes floatUp {
+        0% {
+          transform: translateY(0) translateX(0) scale(0.8);
+          opacity: 0;
+        }
+        12% {
+          opacity: 0.55;
+        }
+        100% {
+          transform: translateY(-115vh) translateX(var(--drift)) scale(1.1);
+          opacity: 0;
+        }
+      }
+      main,
+      footer {
+        position: relative;
+        z-index: 2;
+      }
+
+      /* Hero */
+      .hero-title {
+        font-family: "Caveat", cursive;
+        font-weight: 700;
+        font-size: clamp(3.6rem, 13vw, 9rem);
+        line-height: 0.95;
+        color: var(--glow);
+        animation: pulse 3.6s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          text-shadow:
+            0 0 12px rgba(255, 138, 122, 0.35),
+            0 0 32px rgba(212, 61, 90, 0.35);
+        }
+        50% {
+          text-shadow:
+            0 0 22px rgba(255, 138, 122, 0.75),
+            0 0 64px rgba(212, 61, 90, 0.7);
+        }
+      }
+      .scroll-cue {
+        animation: bob 2.4s ease-in-out infinite;
+      }
+      @keyframes bob {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(8px);
+        }
+      }
+
+      /* Timeline */
+      .timeline {
+        position: relative;
+        max-width: 46rem;
+        margin: 0 auto;
+        padding-left: 1.75rem;
+      }
+      .timeline::before {
+        content: "";
+        position: absolute;
+        left: 6px;
+        top: 6px;
+        bottom: 6px;
+        width: 2px;
+        background: linear-gradient(
+          to bottom,
+          var(--crimson),
+          rgba(212, 61, 90, 0.1)
+        );
+      }
+      .t-item {
+        position: relative;
+        margin-bottom: 1.5rem;
+      }
+      .t-dot {
+        position: absolute;
+        left: -1.75rem;
+        top: 1.35rem;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--midnight);
+        border: 2px solid var(--neon);
+        box-shadow: 0 0 10px rgba(255, 138, 122, 0.6);
+      }
+      .t-card {
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+        background: linear-gradient(
+          160deg,
+          rgba(90, 24, 48, 0.55),
+          rgba(42, 11, 22, 0.75)
+        );
+        border: 1px solid rgba(255, 138, 122, 0.18);
+        border-radius: 18px;
+        padding: 1.15rem 1.3rem;
+        color: inherit;
+        transition:
+          border-color 0.25s,
+          box-shadow 0.25s;
+      }
+      .t-card:hover,
+      .t-card:focus-visible {
+        border-color: rgba(255, 138, 122, 0.55);
+        box-shadow: 0 0 24px rgba(212, 61, 90, 0.25);
+        outline: none;
+      }
+      .t-card:focus-visible {
+        outline: 2px solid var(--neon);
+        outline-offset: 3px;
+      }
+      .t-tag {
+        font-size: 0.8rem;
+        color: var(--neon);
+        letter-spacing: 0.02em;
+      }
+      .t-title {
+        font-family: "Caveat", cursive;
+        font-size: 1.9rem;
+        line-height: 1.1;
+        color: var(--glow);
+        margin: 0.15rem 0 0.35rem;
+      }
+      .t-body {
+        color: var(--muted);
+        margin: 0;
+      }
+      .t-more {
+        display: grid;
+        grid-template-rows: 0fr;
+        transition: grid-template-rows 0.35s ease;
+      }
+      .t-more > div {
+        overflow: hidden;
+      }
+      .t-card[aria-expanded="true"] .t-more {
+        grid-template-rows: 1fr;
+      }
+      .t-more p {
+        margin: 0.8rem 0 0;
+        padding-top: 0.8rem;
+        border-top: 1px dashed rgba(255, 138, 122, 0.3);
+        color: var(--text);
+      }
+      .t-hint {
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin-top: 0.6rem;
+        opacity: 0.8;
+      }
+      .cold-chips {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin: 0.7rem 0 0;
+      }
+      .chip {
+        font-family: "Caveat", cursive;
+        font-size: 1.5rem;
+        line-height: 1;
+        padding: 0.25rem 0.9rem 0.35rem;
+        border-radius: 999px;
+        color: #d6c3ff;
+        background: rgba(30, 20, 50, 0.7);
+        border: 1px solid rgba(160, 140, 220, 0.35);
+      }
+
+      /* Message box */
+      .msg-box {
+        max-width: 50rem;
+        margin: 0 auto;
+        position: relative;
+        background: linear-gradient(
+          170deg,
+          rgba(42, 11, 22, 0.92),
+          rgba(16, 6, 11, 0.96)
+        );
+        border: 1px solid rgba(255, 138, 122, 0.3);
+        border-radius: 26px;
+        padding: clamp(1.4rem, 4vw, 2.6rem);
+        box-shadow:
+          0 0 60px rgba(212, 61, 90, 0.18),
+          inset 0 0 40px rgba(90, 24, 48, 0.25);
+      }
+      .msg-text {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        overflow-wrap: anywhere;
+        font-size: clamp(1.02rem, 2.4vw, 1.15rem);
+        line-height: 1.85;
+        color: var(--text);
+        min-height: 12rem;
+        margin: 0;
+      }
+      .caret {
+        display: inline-block;
+        width: 2px;
+        height: 1.1em;
+        background: var(--neon);
+        vertical-align: -0.15em;
+        margin-left: 2px;
+        animation: blink 1s steps(2) infinite;
+      }
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--muted);
+        border: 1px solid rgba(255, 138, 122, 0.3);
+        border-radius: 999px;
+        padding: 0.5rem 1.1rem;
+        cursor: pointer;
+        font: inherit;
+        font-size: 0.9rem;
+        transition:
+          color 0.2s,
+          border-color 0.2s;
+      }
+      .btn-ghost:hover,
+      .btn-ghost:focus-visible {
+        color: var(--glow);
+        border-color: var(--neon);
+        outline: none;
+      }
+
+      /* Memory cards */
+      .float-card {
+        background: linear-gradient(
+          160deg,
+          rgba(90, 24, 48, 0.6),
+          rgba(30, 9, 18, 0.85)
+        );
+        border: 1px solid rgba(255, 138, 122, 0.22);
+        border-radius: 22px;
+        padding: 1.4rem 1.5rem;
+        animation: drift 7s ease-in-out infinite;
+      }
+      .float-card:nth-child(2) {
+        animation-delay: -2.3s;
+      }
+      .float-card:nth-child(3) {
+        animation-delay: -4.6s;
+      }
+      @keyframes drift {
+        0%,
+        100% {
+          transform: translateY(0) rotate(-0.4deg);
+        }
+        50% {
+          transform: translateY(-10px) rotate(0.4deg);
+        }
+      }
+      .float-card h3 {
+        font-family: "Caveat", cursive;
+        font-size: 1.9rem;
+        line-height: 1.1;
+        color: var(--glow);
+        margin: 0 0 0.4rem;
+      }
+      .float-card p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .btn-main {
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        border: 0;
+        border-radius: 999px;
+        padding: 0.95rem 2rem;
+        color: #2a0510;
+        background: linear-gradient(135deg, var(--neon), #ffb37a);
+        box-shadow: 0 0 26px rgba(255, 138, 122, 0.45);
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+      }
+      .btn-main:hover,
+      .btn-main:focus-visible {
+        transform: translateY(-2px);
+        box-shadow: 0 0 40px rgba(255, 138, 122, 0.7);
+        outline: none;
+      }
+      .btn-soft {
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        border-radius: 999px;
+        padding: 0.95rem 2rem;
+        color: var(--glow);
+        background: rgba(90, 24, 48, 0.5);
+        border: 1px solid rgba(255, 138, 122, 0.45);
+        transition:
+          transform 0.2s,
+          border-color 0.2s;
+      }
+      .btn-soft:hover,
+      .btn-soft:focus-visible {
+        transform: translateY(-2px);
+        border-color: var(--glow);
+        outline: none;
+      }
+      .btn-quiet {
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        border-radius: 999px;
+        padding: 0.95rem 2rem;
+        color: var(--muted);
+        background: transparent;
+        border: 1px solid rgba(201, 165, 176, 0.4);
+        transition:
+          transform 0.2s,
+          border-color 0.2s,
+          color 0.2s;
+      }
+      .btn-quiet:hover,
+      .btn-quiet:focus-visible {
+        transform: translateY(-2px);
+        border-color: var(--muted);
+        color: var(--text);
+        outline: none;
+      }
+      #reply {
+        min-height: 9rem;
+        transition: opacity 0.4s;
+      }
+
+      .reveal {
+        opacity: 0;
+        transform: translateY(14px);
+        transition:
+          opacity 0.7s ease,
+          transform 0.7s ease;
+      }
+      .reveal.in {
+        opacity: 1;
+        transform: none;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      /* Login */
+      #login {
+        position: relative;
+        z-index: 3;
+        min-height: 100svh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+      }
+      .login-card {
+        width: 100%;
+        max-width: 26rem;
+        text-align: center;
+        background: linear-gradient(
+          170deg,
+          rgba(42, 11, 22, 0.92),
+          rgba(16, 6, 11, 0.96)
+        );
+        border: 1px solid rgba(255, 138, 122, 0.3);
+        border-radius: 26px;
+        padding: 2.2rem 1.8rem;
+        box-shadow:
+          0 0 60px rgba(212, 61, 90, 0.2),
+          inset 0 0 40px rgba(90, 24, 48, 0.25);
+      }
+      .field {
+        display: block;
+        text-align: left;
+        margin-top: 1.1rem;
+      }
+      .field span {
+        display: block;
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin-bottom: 0.3rem;
+      }
+      .field input,
+      .chat-form textarea {
+        width: 100%;
+        box-sizing: border-box;
+        font: inherit;
+        color: var(--text);
+        background: rgba(12, 5, 9, 0.7);
+        border: 1px solid rgba(255, 138, 122, 0.3);
+        border-radius: 14px;
+        padding: 0.8rem 1rem;
+      }
+      .field input:focus,
+      .chat-form textarea:focus {
+        outline: 2px solid var(--neon);
+        outline-offset: 2px;
+        border-color: transparent;
+      }
+      .login-error {
+        min-height: 1.5rem;
+        margin: 0.9rem 0 0;
+        color: #ff9aa8;
+        font-size: 0.95rem;
+      }
+
+      /* Portal bar */
+      .portal-bar {
+        position: sticky;
+        top: env(safe-area-inset-top, 0px);
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.8rem;
+        flex-wrap: wrap;
+        padding: 0.65rem 1.2rem;
+        background: rgba(12, 5, 9, 0.78);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 138, 122, 0.18);
+      }
+      .portal-bar nav {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+      }
+      .bar-link {
+        color: var(--muted);
+        text-decoration: none;
+        font-size: 0.95rem;
+      }
+      .bar-link:hover,
+      .bar-link:focus-visible {
+        color: var(--glow);
+        outline: none;
+      }
+
+      /* Chat */
+      .chat-box {
+        max-width: 44rem;
+        margin: 0 auto;
+        border-radius: 26px;
+        overflow: hidden;
+        background: linear-gradient(
+          170deg,
+          rgba(42, 11, 22, 0.92),
+          rgba(16, 6, 11, 0.96)
+        );
+        border: 1px solid rgba(255, 138, 122, 0.3);
+        box-shadow: 0 0 60px rgba(212, 61, 90, 0.18);
+      }
+      .chat-log {
+        height: 26rem;
+        overflow-y: auto;
+        padding: 1.2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+      }
+      .chat-empty {
+        margin: auto;
+        text-align: center;
+        color: var(--muted);
+      }
+      .bubble {
+        max-width: 80%;
+        padding: 0.6rem 0.9rem;
+        border-radius: 18px;
+        overflow-wrap: anywhere;
+      }
+      .bubble.me {
+        align-self: flex-end;
+        background: linear-gradient(135deg, #a8283f, #7d1c34);
+        border-bottom-right-radius: 6px;
+      }
+      .bubble.them {
+        align-self: flex-start;
+        background: rgba(90, 24, 48, 0.65);
+        border: 1px solid rgba(255, 138, 122, 0.2);
+        border-bottom-left-radius: 6px;
+      }
+      .bubble .who {
+        font-size: 0.75rem;
+        color: var(--glow);
+        opacity: 0.85;
+      }
+      .bubble .txt {
+        white-space: pre-wrap;
+      }
+      .bubble .when {
+        font-size: 0.72rem;
+        color: var(--muted);
+        text-align: right;
+        margin-top: 0.15rem;
+      }
+      .chat-form {
+        display: flex;
+        gap: 0.7rem;
+        padding: 1rem;
+        border-top: 1px solid rgba(255, 138, 122, 0.2);
+        align-items: flex-end;
+      }
+      .btn-attach {
+        background: rgba(90, 24, 48, 0.5);
+        color: var(--glow);
+        border: 1px solid rgba(255, 138, 122, 0.35);
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition:
+          transform 0.2s,
+          border-color 0.2s,
+          background-color 0.2s;
+      }
+      .btn-attach:hover,
+      .btn-attach:focus-visible {
+        transform: translateY(-2px);
+        border-color: var(--neon);
+        background: rgba(212, 61, 90, 0.4);
+        outline: none;
+      }
+      .chat-input-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        flex: 1;
+      }
+      .image-preview-container {
+        position: relative;
+        display: inline-block;
+        width: fit-content;
+        margin-bottom: 0.25rem;
+      }
+      .image-preview-container img {
+        height: 70px;
+        width: 70px;
+        object-fit: cover;
+        border-radius: 12px;
+        border: 1px solid var(--neon);
+        box-shadow: 0 0 12px rgba(255, 138, 122, 0.3);
+      }
+      .remove-preview-btn {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        background: #d43d5a;
+        color: #fff;
+        border: none;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        font-size: 14px;
+        line-height: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .chat-img {
+        max-width: 100%;
+        max-height: 220px;
+        border-radius: 12px;
+        margin-top: 0.4rem;
+        margin-bottom: 0.3rem;
+        display: block;
+        object-fit: cover;
+        border: 1px solid rgba(255, 138, 122, 0.25);
+        cursor: pointer;
+        transition:
+          transform 0.2s ease,
+          opacity 0.2s ease;
+      }
+      .chat-img:hover {
+        opacity: 0.92;
+        transform: scale(1.02);
+      }
+      .chat-form textarea {
+        resize: none;
+      }
+      .chat-form .btn-main {
+        padding: 0.8rem 1.4rem;
+      }
+      .btn-main:disabled {
+        opacity: 0.5;
+        cursor: default;
+        transform: none;
+      }
+      .chat-status {
+        text-align: center;
+        font-size: 0.85rem;
+        color: var(--muted);
+        padding: 0.6rem 1rem;
+        border-top: 1px solid rgba(255, 138, 122, 0.12);
+      }
+
+      /* Role-based portal styling */
+      body.role-husband .wife-only {
+        display: none !important;
+      }
+      body.role-husband #portal {
+        min-height: 100svh;
+        display: flex;
+        flex-direction: column;
+      }
+      body.role-husband main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 1rem 0 2rem;
+      }
+      body.role-husband #chat {
+        padding: 1rem 1.5rem;
+        width: 100%;
+      }
+
+      /* Memories & Video styling */
+      .video-card {
+        background: linear-gradient(
+          160deg,
+          rgba(90, 24, 48, 0.65),
+          rgba(30, 9, 18, 0.9)
+        );
+        border: 1px solid rgba(255, 138, 122, 0.3);
+        border-radius: 24px;
+        padding: 1.2rem;
+        box-shadow: 0 0 40px rgba(212, 61, 90, 0.25);
+      }
+      .memory-video {
+        width: 100%;
+        max-height: 440px;
+        border-radius: 16px;
+        background: #000;
+        outline: none;
+      }
+      .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+        gap: 1.25rem;
+      }
+      .memory-photo-card {
+        position: relative;
+        border-radius: 20px;
+        overflow: hidden;
+        background: rgba(42, 11, 22, 0.8);
+        border: 1px solid rgba(255, 138, 122, 0.2);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        transition:
+          transform 0.3s ease,
+          border-color 0.3s ease,
+          box-shadow 0.3s ease;
+        cursor: pointer;
+      }
+      .memory-photo-card:hover {
+        transform: translateY(-4px) scale(1.02);
+        border-color: rgba(255, 138, 122, 0.55);
+        box-shadow: 0 10px 30px rgba(212, 61, 90, 0.3);
+      }
+      .memory-photo-card img {
+        width: 100%;
+        height: 240px;
+        object-fit: cover;
+        display: block;
+      }
+      .photo-caption {
+        padding: 0.75rem 1rem;
+        background: rgba(16, 6, 11, 0.92);
+        border-top: 1px solid rgba(255, 138, 122, 0.15);
+        font-family: "Caveat", cursive;
+        font-size: 1.3rem;
+        color: var(--glow);
+        text-align: center;
+      }
+
+      /* Lightbox Modal */
+      .lightbox-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(10, 3, 7, 0.88);
+        backdrop-filter: blur(12px);
+        padding: 1.5rem;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+      }
+      .lightbox-modal.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .lightbox-content {
+        max-width: 92vw;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        transform: scale(0.95);
+        transition: transform 0.3s ease;
+      }
+      .lightbox-modal.active .lightbox-content {
+        transform: scale(1);
+      }
+      .lightbox-img {
+        max-width: 90vw;
+        max-height: 78vh;
+        object-fit: contain;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 138, 122, 0.4);
+        box-shadow: 0 0 50px rgba(212, 61, 90, 0.4);
+      }
+      .lightbox-caption {
+        margin-top: 0.8rem;
+        font-family: "Caveat", cursive;
+        font-size: 1.6rem;
+        color: var(--glow);
+        text-align: center;
+        text-shadow: 0 0 10px rgba(255, 138, 122, 0.5);
+      }
+      .lightbox-close {
+        position: absolute;
+        top: -2.5rem;
+        right: 0;
+        background: transparent;
+        border: none;
+        color: var(--text);
+        font-size: 2rem;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0.2rem 0.6rem;
+        border-radius: 50%;
+        transition:
+          color 0.2s,
+          transform 0.2s;
+      }
+      .lightbox-close:hover {
+        color: var(--neon);
+        transform: scale(1.15);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+        .hero-title,
+        .scroll-cue,
+        .float-card,
+        .caret {
+          animation: none;
+        }
+        .heart {
+          display: none;
+        }
+        .reveal {
+          opacity: 1;
+          transform: none;
+          transition: none;
+        }
+        .t-more {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-glow" aria-hidden="true"></div>
+    <div id="hearts" aria-hidden="true"></div>
+
+    <section id="login">
+      <div class="login-card">
+        <h1 class="hero-title" style="font-size: clamp(3rem, 14vw, 4.5rem)">
+          Rebuilding Us
+        </h1>
+        <p class="script mt-3" style="font-size: 1.8rem; color: var(--neon)">
+          Sign in to our page
+        </p>
+        <form id="loginForm" autocomplete="on">
+          <label class="field"
+            ><span>Username</span
+            ><input
+              id="username"
+              name="username"
+              type="text"
+              autocomplete="username"
+              autocapitalize="none"
+              spellcheck="false"
+              required
+          /></label>
+          <label class="field"
+            ><span>Password</span
+            ><input
+              id="password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              placeholder="guess the password koki ❤️"
+              required
+          /></label>
+          <p id="loginError" class="login-error" role="alert"></p>
+          <button id="loginBtn" class="btn-main mt-2" type="submit">
+            Sign in
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <div id="portal" hidden>
+      <header class="portal-bar">
+        <span class="script" style="font-size: 1.6rem; color: var(--glow)"
+          >Rebuilding Us</span
+        >
+        <nav>
+          <span
+            id="whoami"
+            style="color: var(--muted); font-size: 0.9rem"
+          ></span>
+          <a href="#memories" class="bar-link wife-only">Memories</a>
+          <a href="#chat" class="bar-link wife-only">Messages</a>
+          <button id="logout" class="btn-ghost" type="button">Log out</button>
+        </nav>
+      </header>
+
+      <main>
+        <!-- Hero (Wife Only) -->
+        <section
+          class="wife-only min-h-screen flex flex-col items-center justify-center text-center px-6"
+          style="min-height: 100svh"
+        >
+          <h1 class="hero-title">Rebuilding Us</h1>
+          <p
+            class="script mt-6"
+            style="font-size: clamp(1.9rem, 6vw, 3rem); color: var(--neon)"
+          >
+            A Message for Koki
+          </p>
+          <p class="mt-6 max-w-md" style="color: var(--muted)">
+            Not an excuse. Not a demand. Just the truth, written slowly, for you
+            to read whenever you're ready.
+          </p>
+          <a
+            href="#misunderstood"
+            class="scroll-cue mt-14 inline-flex flex-col items-center gap-1"
+            style="color: var(--muted); text-decoration: none"
+            aria-label="Scroll to the timeline"
+          >
+            <span class="text-sm">Start here</span>
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </a>
+        </section>
+
+        <!-- Timeline (Wife Only) -->
+        <section id="misunderstood" class="wife-only px-6 py-24">
+          <div class="text-center mb-14 reveal">
+            <h2
+              class="script"
+              style="
+                font-size: clamp(2.4rem, 8vw, 4rem);
+                color: var(--glow);
+                line-height: 1.05;
+              "
+            >
+              Where We Misunderstood Each Other
+            </h2>
+            <p class="mt-3 mx-auto max-w-md" style="color: var(--muted)">
+              Tap a moment to see how it felt on my side.
+            </p>
+          </div>
+
+          <div class="timeline">
+            <div class="t-item reveal">
+              <span class="t-dot"></span>
+              <button class="t-card" aria-expanded="false">
+                <div class="t-tag">Miscommunication</div>
+                <div class="t-title">When the warmth changed</div>
+                <p class="t-body">
+                  I remembered how you used to ask about me with care and love.
+                  Then your words changed, and I didn't know why.
+                </p>
+                <div class="t-more">
+                  <div>
+                    <p>
+                      I felt it like a cut, and I kept asking myself what I did.
+                      I should have asked you instead of guessing.
+                    </p>
+                  </div>
+                </div>
+                <div class="t-hint">Tap to open</div>
+              </button>
+            </div>
+
+            <div class="t-item reveal">
+              <span class="t-dot"></span>
+              <button class="t-card" aria-expanded="false">
+                <div class="t-tag">Cold responses</div>
+                <div class="t-title">Two small words</div>
+                <p class="t-body">
+                  Short replies landed heavier than they were probably meant to.
+                </p>
+                <div class="cold-chips">
+                  <span class="chip">Ledhu</span><span class="chip">Sare</span>
+                </div>
+                <div class="t-more">
+                  <div>
+                    <p>
+                      I read a whole wall of distance into them, and I answered
+                      from that hurt instead of asking what you actually meant.
+                    </p>
+                  </div>
+                </div>
+                <div class="t-hint">Tap to open</div>
+              </button>
+            </div>
+
+            <div class="t-item reveal">
+              <span class="t-dot"></span>
+              <button class="t-card" aria-expanded="false">
+                <div class="t-tag">Severe anger</div>
+                <div class="t-title">Words I never should have said</div>
+                <p class="t-body">
+                  In my anger I spoke cruelly. You deserved better from me.
+                </p>
+                <div class="t-more">
+                  <div>
+                    <p>
+                      Anger explains it. It doesn't excuse it. I'm sorry, and I
+                      want to learn to stop before the words come out.
+                    </p>
+                  </div>
+                </div>
+                <div class="t-hint">Tap to open</div>
+              </button>
+            </div>
+
+            <div class="t-item reveal">
+              <span class="t-dot"></span>
+              <button class="t-card" aria-expanded="false">
+                <div class="t-tag">Unaddressed traumas</div>
+                <div class="t-title">Old wounds, new fear</div>
+                <p class="t-body">
+                  Past heartbreaks taught me to expect the worst, even from
+                  someone I trusted without hesitation.
+                </p>
+                <div class="t-more">
+                  <div>
+                    <p>
+                      That fear is mine to work on. It isn't proof of anything
+                      about you, and I don't want you to carry it for me.
+                    </p>
+                  </div>
+                </div>
+                <div class="t-hint">Tap to open</div>
+              </button>
+            </div>
+
+            <div class="t-item reveal">
+              <span class="t-dot"></span>
+              <button class="t-card" aria-expanded="false">
+                <div class="t-tag">Doubts</div>
+                <div class="t-title">The overthinking hours</div>
+                <p class="t-body">
+                  I waited whole days, replaying everything, and ended them
+                  tired and full of sorrow.
+                </p>
+                <div class="t-more">
+                  <div>
+                    <p>
+                      When you came back, my heart came back too. But my mind
+                      was still catching up, and I didn't know how to say so.
+                    </p>
+                  </div>
+                </div>
+                <div class="t-hint">Tap to open</div>
+              </button>
+            </div>
+
+            <div class="t-item reveal">
+              <span class="t-dot"></span>
+              <button class="t-card" aria-expanded="false">
+                <div class="t-tag">Feeling unloved</div>
+                <div class="t-title">When you stepped away</div>
+                <p class="t-body">
+                  In my saddest time, I felt alone. When you returned, it didn't
+                  feel like the love I remembered.
+                </p>
+                <div class="t-more">
+                  <div>
+                    <p>
+                      I miss that love. I never wanted anything else from you.
+                    </p>
+                  </div>
+                </div>
+                <div class="t-hint">Tap to open</div>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Core message (Wife Only) -->
+        <section id="message" class="wife-only px-6 py-24">
+          <div class="text-center mb-12 reveal">
+            <h2
+              class="script"
+              style="
+                font-size: clamp(2.4rem, 8vw, 4rem);
+                color: var(--glow);
+                line-height: 1.05;
+              "
+            >
+              What I Want You to Know
+            </h2>
+            <p class="mt-3" style="color: var(--muted)">
+              Unedited. Exactly as I wrote it.
+            </p>
+          </div>
+
+          <div class="msg-box reveal">
+            <p id="msgText" class="msg-text"></p>
+            <div class="mt-6 flex justify-end">
+              <button id="showAll" class="btn-ghost" type="button">
+                Show the whole message
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Reconciliation (Wife Only) -->
+        <section id="together" class="wife-only px-6 py-24">
+          <div class="text-center mb-14 reveal">
+            <h2
+              class="script"
+              style="
+                font-size: clamp(2.4rem, 8vw, 4rem);
+                color: var(--glow);
+                line-height: 1.05;
+              "
+            >
+              Little Things I Miss
+            </h2>
+            <p class="mt-3 mx-auto max-w-md" style="color: var(--muted)">
+              A few small things, said lightly, because I still believe in us.
+            </p>
+          </div>
+
+          <div
+            class="grid gap-6 mx-auto reveal"
+            style="
+              max-width: 62rem;
+              grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+            "
+          >
+            <article class="float-card">
+              <h3>The old you</h3>
+              <p>
+                The one who asked how I was and meant it. She's the reason I'm
+                writing this at all.
+              </p>
+            </article>
+            <article class="float-card">
+              <h3>"Sare" translation service</h3>
+              <p>
+                Let's agree that "Sare" comes with a footnote: okay, or not
+                okay? I'll ask. You tell me. Deal?
+              </p>
+            </article>
+            <article class="float-card">
+              <h3>Lesson one</h3>
+              <p>
+                Nerpinchu nanna. Teach me how to be with you. I promise to take
+                notes, and I promise to be a slow but sincere student.
+              </p>
+            </article>
+          </div>
+
+          <div
+            class="mx-auto mt-20 text-center reveal"
+            style="max-width: 36rem"
+          >
+            <p
+              class="script"
+              style="
+                font-size: clamp(1.9rem, 6vw, 2.6rem);
+                color: var(--neon);
+                line-height: 1.2;
+              "
+            >
+              Whatever you choose, I'll understand.
+            </p>
+            <div class="mt-8 flex flex-wrap gap-4 justify-center">
+              <button id="forgive" class="btn-main" type="button">
+                Forgive &amp; Talk
+              </button>
+              <button id="time" class="btn-soft" type="button">
+                Take Time
+              </button>
+              <button id="leave" class="btn-quiet" type="button">
+                Leave Me
+              </button>
+            </div>
+            <div
+              id="reply"
+              class="mt-10"
+              role="status"
+              aria-live="polite"
+            ></div>
+          </div>
+        </section>
+
+        <!-- Memories (Wife Only) -->
+        <section id="memories" class="wife-only px-6 py-24">
+          <div class="text-center mb-14 reveal">
+            <h2
+              class="script"
+              style="
+                font-size: clamp(2.4rem, 8vw, 4rem);
+                color: var(--glow);
+                line-height: 1.05;
+              "
+            >
+              Our Precious Memories
+            </h2>
+            <p class="mt-3 mx-auto max-w-md" style="color: var(--muted)">
+              Special moments, your smile, and memories I hold close to my
+              heart.
+            </p>
+          </div>
+
+          <!-- Video Player Card -->
+          <div class="video-container max-w-2xl mx-auto mb-16 reveal">
+            <div class="video-card">
+              <div class="video-header mb-3 flex items-center justify-between">
+                <span
+                  class="script"
+                  style="font-size: 1.6rem; color: var(--neon)"
+                  >Special Video for Koki ❤️</span
+                >
+                <span class="text-xs" style="color: var(--muted)"
+                  >Tap to play</span
+                >
+              </div>
+              <video
+                id="memoryVideo"
+                controls
+                preload="metadata"
+                playsinline
+                class="memory-video"
+                poster="images/kokki memories.jpeg"
+              >
+                <source src="images/koki video.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          </div>
+
+          <!-- Photo Gallery -->
+          <div class="gallery-grid max-w-5xl mx-auto reveal">
+            <div class="memory-photo-card">
+              <img
+                src="images/kokki memories.jpeg"
+                alt="Memories with Koki"
+                loading="lazy"
+              />
+              <div class="photo-caption">Moments I cherish forever ❤️</div>
+            </div>
+            <div class="memory-photo-card">
+              <img
+                src="images/WhatsApp Image 2026-03-29 at 12.07.02 AM (1).jpeg"
+                alt="Memory"
+                loading="lazy"
+              />
+              <div class="photo-caption">Your sweetest smile ✨</div>
+            </div>
+            <div class="memory-photo-card">
+              <img
+                src="images/WhatsApp Image 2026-03-25 at 8.55.57 PM.jpeg"
+                alt="Memory"
+                loading="lazy"
+              />
+              <div class="photo-caption">Us together in love 💕</div>
+            </div>
+            <div class="memory-photo-card">
+              <img
+                src="images/WhatsApp Image 2026-03-22 at 5.51.19 PM (2).jpeg"
+                alt="Memory"
+                loading="lazy"
+              />
+              <div class="photo-caption">the goated beauty 🌸</div>
+            </div>
+            <div class="memory-photo-card">
+              <img
+                src="images/IMG_20260419_115841_095.jpg"
+                alt="Memory"
+                loading="lazy"
+              />
+              <div class="photo-caption">Unforgettable days 💫</div>
+            </div>
+            <div class="memory-photo-card">
+              <img
+                src="images/Screenshot_20260410-125501.jpg"
+                alt="Memory"
+                loading="lazy"
+              />
+              <div class="photo-caption">Always in my thoughts 💖</div>
+            </div>
+            <div class="memory-photo-card">
+              <img src="images/1776395148993.png" alt="Memory" loading="lazy" />
+              <div class="photo-caption">Forever and always yours 🌹</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Messages -->
+        <section id="chat" class="px-6 py-24">
+          <div class="text-center mb-10">
+            <h2
+              class="script"
+              style="
+                font-size: clamp(2.4rem, 8vw, 4rem);
+                color: var(--glow);
+                line-height: 1.05;
+              "
+            >
+              Our Messages
+            </h2>
+            <p class="mt-3 mx-auto max-w-md" style="color: var(--muted)">
+              Write to each other here, whenever you want.
+            </p>
+          </div>
+          <div class="chat-box">
+            <div id="chatLog" class="chat-log" aria-live="polite"></div>
+            <div id="chatStatus" class="chat-status"></div>
+            <div class="chat-form">
+              <input
+                type="file"
+                id="chatFileInput"
+                accept="image/*"
+                style="display: none"
+              />
+              <button
+                id="chatAttachBtn"
+                class="btn-attach"
+                type="button"
+                title="Send an image"
+                aria-label="Send an image"
+              >
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" />
+                </svg>
+              </button>
+              <div class="chat-input-wrapper">
+                <div
+                  id="imagePreviewContainer"
+                  class="image-preview-container"
+                  style="display: none"
+                >
+                  <img id="imagePreview" src="" alt="Selected preview" />
+                  <button
+                    id="removeImageBtn"
+                    type="button"
+                    class="remove-preview-btn"
+                    aria-label="Remove image"
+                  >
+                    &times;
+                  </button>
+                </div>
+                <textarea
+                  id="chatInput"
+                  rows="2"
+                  maxlength="1000"
+                  placeholder="Write a message..."
+                  aria-label="Message"
+                ></textarea>
+              </div>
+              <button id="chatSend" class="btn-main" type="button">Send</button>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="wife-only text-center px-6 pb-16 pt-6">
+        <p class="script" style="font-size: 2rem; color: var(--glow)">
+          I love you, nanna
+        </p>
+        <p class="mt-2" style="color: var(--muted)">
+          Made with all my heart, for Koki.
+        </p>
+      </footer>
+
+      <!-- Lightbox Modal -->
+      <div
+        id="lightboxModal"
+        class="lightbox-modal"
+        aria-hidden="true"
+        role="dialog"
+        aria-label="Image Preview"
+      >
+        <div class="lightbox-content">
+          <button
+            id="lightboxClose"
+            class="lightbox-close"
+            type="button"
+            aria-label="Close preview"
+          >
+            &times;
+          </button>
+          <img
+            id="lightboxImg"
+            class="lightbox-img"
+            src=""
+            alt="Enlarged memory"
+          />
+          <div id="lightboxCaption" class="lightbox-caption"></div>
+        </div>
+      </div>
+    </div>
+
+    <script type="text/plain" id="msgSource">
+      once i remember you who is intrested to speak with me , there is no ego she texts me all the time and calls me all the time even if iam doesn't make a sense of her calls and i remember you who ask me about with good care and good love now the changes in your words make me feel like killing my heart with knife where that innocent one gone ,, i don't know but i know that iam the one of the reason that makes you heart less on me and i feel guilty on that i don't know what i did that makes you like cold, iam the reason that you not intrested on me. idon't know why my tears are coming while write this text for you, teach me how to love you and how to behave with you but don't leave me like this iam angry man who doesn't know how the true love is . from my past lovestories i stopped beliving women but i trusted you without hestation but you once cheated me and that time i am back to that state iam afraid of cheating and framing pain that doesn't mean you are not true now iam trying to say i have such a horrible traumas so that is the reason iam always doubting if again i face cheating i will stop my life. but i mistrust people even i love more them , you know how much i love i wait a whole day but end of the day iam leaving painful tears and heart full of sorrow and iam the one of the reason but teach me koki how to be your man but please iam requesting don't leave when i sorrow you know iam a overthinker and i think a lot and dying a thousands of times and when you return my mind remains same like a dead body and heart made me come back to you but iam the one who loved you more and i am not feeling loved by you when you leave in my saddest time and when you return that doesn't feel you love me Once i remember a girl who accept all my apologies and love me truely nanna i am sorry i spoke many bad words and compare you with prostitute it doesn't mean a prostitute iam a angry man who scold you like that but the rights are given by you but nanna your egoistic answers on your loved onces kills the love on me so i think i already died in your heart may be this message is cpr to that dead body hoping that dead body will live in your heart. i love you koki teach me how to be with you i will try my leve best and i am not happy koki you no wanted to spend time with me i never loved you by seeing your body or any benfits i just loved you the way you love me so that iam missing that love don't change koki iwant that koki back and tell me what to do trust me i will do my level best to control my anger but i always doubts you but trust me if you reassured then i always came back to you and never treat you like prostitute don't love with no feelings in your heart amma i will wait for your feelings will be return to you i love you thalli ummhaaa nerputhav kadha amma naku em cheppakunda dhayaku nanna naku iam the one who cares but you never treated you like a weight but i speak like that in my anger don't trust that words sorry nanna nerpinchu nanna neetho ela undali ani neetho ela behave cheyali ani......... i love you nanna ❤️❤️❤️
+    </script>
+
+    <script>
+      (function () {
+        var reduce =
+          window.matchMedia &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        /* Floating hearts */
+        var layer = document.getElementById("hearts");
+        var heartsOn = true;
+        function spawnHeart() {
+          if (!heartsOn || reduce) return;
+          var h = document.createElement("span");
+          h.className = "heart";
+          h.textContent = "\u2665";
+          h.style.left = Math.random() * 100 + "vw";
+          h.style.fontSize = 10 + Math.random() * 18 + "px";
+          h.style.setProperty("--drift", Math.random() * 80 - 40 + "px");
+          var dur = 9 + Math.random() * 9;
+          h.style.animationDuration = dur + "s";
+          layer.appendChild(h);
+          setTimeout(function () {
+            h.remove();
+          }, dur * 1000);
+        }
+        for (var i = 0; i < 6; i++) setTimeout(spawnHeart, i * 500);
+        setInterval(spawnHeart, 1400);
+
+        /* Scroll reveals */
+        var revealEls = document.querySelectorAll(".reveal");
+        if ("IntersectionObserver" in window) {
+          var io = new IntersectionObserver(
+            function (entries) {
+              entries.forEach(function (e) {
+                if (e.isIntersecting) {
+                  e.target.classList.add("in");
+                  io.unobserve(e.target);
+                }
+              });
+            },
+            { threshold: 0.15 },
+          );
+          revealEls.forEach(function (el) {
+            io.observe(el);
+          });
+        } else {
+          revealEls.forEach(function (el) {
+            el.classList.add("in");
+          });
+        }
+
+        /* Timeline cards */
+        document.querySelectorAll(".t-card").forEach(function (card) {
+          card.addEventListener("click", function () {
+            var open = card.getAttribute("aria-expanded") === "true";
+            card.setAttribute("aria-expanded", String(!open));
+            var hint = card.querySelector(".t-hint");
+            if (hint) hint.textContent = open ? "Tap to open" : "Tap to close";
+          });
+        });
+
+        /* Typewriter for the message (text is read verbatim from the source block) */
+        var full = document.getElementById("msgSource").textContent;
+        var chars = Array.from(full);
+        var out = document.getElementById("msgText");
+        var showAllBtn = document.getElementById("showAll");
+        var idx = 0,
+          timer = null,
+          started = false;
+
+        function finish() {
+          if (timer) clearInterval(timer);
+          out.textContent = full;
+          showAllBtn.style.display = "none";
+        }
+        function start() {
+          if (started) return;
+          started = true;
+          if (reduce) {
+            finish();
+            return;
+          }
+          var caret = document.createElement("span");
+          caret.className = "caret";
+          timer = setInterval(function () {
+            idx = Math.min(idx + 3, chars.length);
+            out.textContent = chars.slice(0, idx).join("");
+            out.appendChild(caret);
+            if (idx >= chars.length) {
+              clearInterval(timer);
+              caret.remove();
+              showAllBtn.style.display = "none";
+            }
+          }, 28);
+        }
+        showAllBtn.addEventListener("click", finish);
+        // Show the full text if JS-driven typing can't start (no observer support)
+        out.textContent = "";
+        if ("IntersectionObserver" in window) {
+          var mio = new IntersectionObserver(
+            function (entries) {
+              entries.forEach(function (e) {
+                if (e.isIntersecting) {
+                  start();
+                  mio.disconnect();
+                }
+              });
+            },
+            { threshold: 0.35 },
+          );
+          mio.observe(document.querySelector(".msg-box"));
+        } else {
+          finish();
+        }
+
+        /* Reconciliation choices */
+        var reply = document.getElementById("reply");
+        function setReply(html) {
+          reply.style.opacity = 0;
+          setTimeout(function () {
+            reply.innerHTML = html;
+            reply.style.opacity = 1;
+          }, 250);
+        }
+        document.getElementById("leave").addEventListener("click", function () {
+          heartsOn = false;
+          setReply(
+            '<p class="script" style="font-size:2.2rem;color:var(--glow);line-height:1.2;">I understand.</p>' +
+              '<p style="color:var(--muted);margin-top:.8rem;">This hurts, and I won\u2019t pretend it doesn\u2019t. But I\u2019d rather you be honest with me than stay out of guilt.</p>' +
+              '<p style="color:var(--muted);margin-top:.8rem;">I\u2019m sorry for the pain I caused you. Thank you for the love you gave me and for every time you cared. I\u2019ll keep that with me, and I\u2019ll work on my anger and my fear so that no one else has to pay for them.</p>' +
+              '<p class="script" style="font-size:1.9rem;color:var(--neon);margin-top:1rem;line-height:1.2;">Take care of yourself, Koki. I wish you peace and every good thing.</p>',
+          );
+        });
+        document
+          .getElementById("forgive")
+          .addEventListener("click", function () {
+            heartsOn = true;
+            for (var i = 0; i < 18; i++) setTimeout(spawnHeart, i * 90);
+            setReply(
+              '<p class="script" style="font-size:2.2rem;color:var(--glow);line-height:1.2;">Thank you, Koki.</p><p style="color:var(--muted);margin-top:.5rem;">Whenever you feel like it, say hi. We can start with something small, and I\u2019ll listen properly this time.</p>',
+            );
+          });
+        document.getElementById("time").addEventListener("click", function () {
+          heartsOn = true;
+          setReply(
+            '<p class="script" style="font-size:2.2rem;color:var(--glow);line-height:1.2;">Take all the time you need.</p><p style="color:var(--muted);margin-top:.5rem;">There\u2019s no timer on this page and no wrong answer. Your feelings matter more than my hurry.</p>',
+          );
+        });
+      })();
+    </script>
+
+    <script>
+      (function () {
+        "use strict";
+
+        // Environment Configuration (Loaded from config.js / window.ENV with fallbacks)
+        var env = window.ENV || {};
+        var SUPABASE_URL =
+          env.SUPABASE_URL || "https://aossuxdqhqbokkeggkav.supabase.co";
+        var SUPABASE_KEY =
+          env.SUPABASE_PUBLISHABLE_KEY ||
+          "sb_publishable_c81nH78WhyeAOWqg3GrnCg_2NaN8pYh";
+
+        var USERS = {
+          husband: {
+            hash:
+              env.HUSBAND_HASH ||
+              "8d81d83dee8006f70328c68bd67aeb30f9216c55ce164be80608c6e87c6f8360",
+            name: "Husband",
+          },
+          wife: {
+            hash:
+              env.WIFE_HASH ||
+              "837675a995691ce263fb56538a32092f53a3fd8503abd66f2dc9dc5a41be7700",
+            name: "Wife",
+          },
+        };
+        var POLL_MS = 3000;
+
+        function $(id) {
+          return document.getElementById(id);
+        }
+        var enc = new TextEncoder(),
+          dec = new TextDecoder();
+        var me = null,
+          key = null,
+          pollTimer = null,
+          lastSig = "",
+          memory = [],
+          busy = false;
+
+        function hex(buf) {
+          return Array.from(new Uint8Array(buf))
+            .map(function (b) {
+              return b.toString(16).padStart(2, "0");
+            })
+            .join("");
+        }
+        function b64(buf) {
+          var s = "";
+          new Uint8Array(buf).forEach(function (b) {
+            s += String.fromCharCode(b);
+          });
+          return btoa(s);
+        }
+        function unb64(str) {
+          var s = atob(str),
+            a = new Uint8Array(s.length);
+          for (var i = 0; i < s.length; i++) a[i] = s.charCodeAt(i);
+          return a;
+        }
+        function delay(ms) {
+          return new Promise(function (r) {
+            setTimeout(r, ms);
+          });
+        }
+
+        async function sha(u, p) {
+          return hex(
+            await crypto.subtle.digest(
+              "SHA-256",
+              enc.encode("rebuilding-us|" + u + "|" + p),
+            ),
+          );
+        }
+        async function deriveKey(p) {
+          var base = await crypto.subtle.importKey(
+            "raw",
+            enc.encode(p),
+            "PBKDF2",
+            false,
+            ["deriveKey"],
+          );
+          return crypto.subtle.deriveKey(
+            {
+              name: "PBKDF2",
+              salt: enc.encode("rebuilding-us-chat-v1"),
+              iterations: 200000,
+              hash: "SHA-256",
+            },
+            base,
+            { name: "AES-GCM", length: 256 },
+            false,
+            ["encrypt", "decrypt"],
+          );
+        }
+        async function seal(obj) {
+          var iv = crypto.getRandomValues(new Uint8Array(12));
+          var ct = await crypto.subtle.encrypt(
+            { name: "AES-GCM", iv: iv },
+            key,
+            enc.encode(JSON.stringify(obj)),
+          );
+          return { iv: b64(iv), ct: b64(ct) };
+        }
+        async function unseal(rec) {
+          try {
+            var pt = await crypto.subtle.decrypt(
+              { name: "AES-GCM", iv: unb64(rec.iv) },
+              key,
+              unb64(rec.ct),
+            );
+            return JSON.parse(dec.decode(pt));
+          } catch (e) {
+            return null;
+          }
+        }
+
+        /* ---------- storage ---------- */
+        function live() {
+          return Boolean(
+            SUPABASE_URL && SUPABASE_KEY && /^https:\/\//.test(SUPABASE_URL),
+          );
+        }
+
+        async function fetchAll() {
+          if (!live()) {
+            try {
+              return JSON.parse(localStorage.getItem("ru-demo") || "[]");
+            } catch (e) {
+              return memory;
+            }
+          }
+          var r = await fetch(
+            SUPABASE_URL +
+              "/rest/v1/messages?select=*&order=created_at.asc&limit=150",
+            {
+              headers: {
+                apikey: SUPABASE_KEY,
+                Authorization: "Bearer " + SUPABASE_KEY,
+              },
+            },
+          );
+          if (!r.ok) {
+            var errBody = await r.text();
+            console.error(
+              "Supabase fetchAll error (" + r.status + "):",
+              errBody,
+            );
+            throw new Error("Supabase error " + r.status + ": " + errBody);
+          }
+          return await r.json();
+        }
+        async function push(rec) {
+          if (!live()) {
+            rec.id = rec.t + "-" + Math.random().toString(36).slice(2, 8);
+            var arr;
+            try {
+              arr = JSON.parse(localStorage.getItem("ru-demo") || "[]");
+            } catch (e) {
+              arr = memory;
+            }
+            arr.push(rec);
+            try {
+              localStorage.setItem("ru-demo", JSON.stringify(arr));
+            } catch (e) {
+              memory = arr;
+            }
+            return;
+          }
+          var r = await fetch(SUPABASE_URL + "/rest/v1/messages", {
+            method: "POST",
+            headers: {
+              apikey: SUPABASE_KEY,
+              Authorization: "Bearer " + SUPABASE_KEY,
+              "Content-Type": "application/json",
+              Prefer: "return=minimal",
+            },
+            body: JSON.stringify({
+              sender: me,
+              content: JSON.stringify(rec),
+            }),
+          });
+          if (!r.ok) {
+            var errBody = await r.text();
+            console.error("Supabase push error (" + r.status + "):", errBody);
+            throw new Error("Supabase error " + r.status + ": " + errBody);
+          }
+        }
+
+        /* ---------- chat UI ---------- */
+        function setStatus(ok) {
+          var el = $("chatStatus");
+          if (!live())
+            el.textContent =
+              "Demo mode: messages stay on this device only. Add the database URL to send between devices.";
+          else if (ok)
+            el.textContent =
+              "Messages are connected to Database and encrypted.";
+          else
+            el.textContent =
+              "Can\u2019t reach the message server. Trying again\u2026";
+        }
+        function stamp(t) {
+          var d = new Date(t),
+            now = new Date();
+          var time = d.toLocaleTimeString([], {
+            hour: "numeric",
+            minute: "2-digit",
+          });
+          return d.toDateString() === now.toDateString()
+            ? time
+            : d.toLocaleDateString([], { day: "numeric", month: "short" }) +
+                ", " +
+                time;
+        }
+        var pendingImage = null;
+        var fileInput = $("chatFileInput");
+        var attachBtn = $("chatAttachBtn");
+        var previewContainer = $("imagePreviewContainer");
+        var previewImg = $("imagePreview");
+        var removeImgBtn = $("removeImageBtn");
+
+        function clearImagePreview() {
+          pendingImage = null;
+          if (fileInput) fileInput.value = "";
+          if (previewImg) previewImg.src = "";
+          if (previewContainer) previewContainer.style.display = "none";
+        }
+
+        if (attachBtn && fileInput) {
+          attachBtn.addEventListener("click", function () {
+            fileInput.click();
+          });
+
+          fileInput.addEventListener("change", function () {
+            var file = fileInput.files && fileInput.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function (e) {
+              var img = new Image();
+              img.onload = function () {
+                var maxDim = 800;
+                var w = img.width,
+                  h = img.height;
+                if (w > maxDim || h > maxDim) {
+                  if (w > h) {
+                    h = Math.round((h * maxDim) / w);
+                    w = maxDim;
+                  } else {
+                    w = Math.round((w * maxDim) / h);
+                    h = maxDim;
+                  }
+                }
+                var canvas = document.createElement("canvas");
+                canvas.width = w;
+                canvas.height = h;
+                var ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, w, h);
+                pendingImage = canvas.toDataURL("image/jpeg", 0.75);
+                if (previewImg) previewImg.src = pendingImage;
+                if (previewContainer)
+                  previewContainer.style.display = "inline-block";
+              };
+              img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+          });
+        }
+
+        if (removeImgBtn) {
+          removeImgBtn.addEventListener("click", clearImagePreview);
+        }
+
+        function draw(items) {
+          var log = $("chatLog");
+          var nearBottom =
+            log.scrollHeight - log.scrollTop - log.clientHeight < 80 ||
+            !log.children.length;
+          log.textContent = "";
+          if (!items.length) {
+            var empty = document.createElement("div");
+            empty.className = "chat-empty script";
+            empty.style.fontSize = "1.7rem";
+            empty.textContent = "No messages yet. Say something kind.";
+            log.appendChild(empty);
+            return;
+          }
+          items.forEach(function (m) {
+            var b = document.createElement("div");
+            b.className = "bubble " + (m.from === me ? "me" : "them");
+            var who = document.createElement("div");
+            who.className = "who";
+            who.textContent =
+              (USERS[m.from] && USERS[m.from].name) || "Unknown";
+            b.appendChild(who);
+
+            if (m.img) {
+              var imgEl = document.createElement("img");
+              imgEl.className = "chat-img";
+              imgEl.src = m.img;
+              imgEl.alt = "Shared photo";
+              imgEl.loading = "lazy";
+              imgEl.addEventListener("click", function () {
+                openLightbox(
+                  m.img,
+                  ((USERS[m.from] && USERS[m.from].name) || "Photo") +
+                    " \u2022 " +
+                    stamp(m.t),
+                );
+              });
+              b.appendChild(imgEl);
+            }
+
+            if (m.text) {
+              var txt = document.createElement("div");
+              txt.className = "txt";
+              txt.textContent = m.text;
+              b.appendChild(txt);
+            }
+
+            var when = document.createElement("div");
+            when.className = "when";
+            when.textContent = stamp(m.t);
+            b.appendChild(when);
+            log.appendChild(b);
+          });
+          if (nearBottom) log.scrollTop = log.scrollHeight;
+        }
+
+        async function refresh() {
+          if (!me || busy) return;
+          var recs;
+          try {
+            recs = await fetchAll();
+            setStatus(true);
+          } catch (e) {
+            setStatus(false);
+            return;
+          }
+          var sig = recs
+            .map(function (r) {
+              return r.id;
+            })
+            .join(",");
+          if (sig === lastSig) return;
+          lastSig = sig;
+          var items = [];
+          for (var i = 0; i < recs.length; i++) {
+            var row = recs[i];
+            var recData = null;
+            try {
+              recData = JSON.parse(row.content);
+            } catch (err) {
+              recData = null;
+            }
+            if (recData && recData.iv && recData.ct) {
+              var m = await unseal(recData);
+              if (
+                m &&
+                (typeof m.text === "string" || typeof m.img === "string")
+              ) {
+                items.push({
+                  from: m.from || row.sender,
+                  text: m.text || "",
+                  img: m.img || null,
+                  t: recData.t || new Date(row.created_at).getTime(),
+                });
+              }
+            } else if (typeof row.content === "string") {
+              items.push({
+                from: row.sender,
+                text: row.content,
+                img: null,
+                t: new Date(row.created_at).getTime(),
+              });
+            }
+          }
+          items.sort(function (a, b) {
+            return a.t - b.t;
+          });
+          draw(items);
+        }
+
+        async function send() {
+          var input = $("chatInput");
+          var text = input.value.trim();
+          if ((!text && !pendingImage) || !me) return;
+          busy = true;
+          $("chatSend").disabled = true;
+          try {
+            var rec = await seal({
+              from: me,
+              text: text.slice(0, 1000),
+              img: pendingImage || null,
+            });
+            rec.t = Date.now();
+            await push(rec);
+            input.value = "";
+            clearImagePreview();
+          } catch (e) {
+            setStatus(false);
+          }
+          busy = false;
+          $("chatSend").disabled = false;
+          lastSig = "";
+          refresh();
+        }
+        $("chatSend").addEventListener("click", send);
+        $("chatInput").addEventListener("keydown", function (e) {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            send();
+          }
+        });
+
+        /* ---------- login / logout ---------- */
+        function showPortal() {
+          $("login").hidden = true;
+          $("portal").hidden = false;
+          $("whoami").textContent = "Signed in as " + USERS[me].name;
+          document.body.classList.remove("role-husband", "role-wife");
+          document.body.classList.add(
+            me === "husband" ? "role-husband" : "role-wife",
+          );
+          window.scrollTo(0, 0);
+          lastSig = "";
+          draw([]);
+          setStatus(true);
+          refresh();
+          pollTimer = setInterval(function () {
+            if (!document.hidden) refresh();
+          }, POLL_MS);
+        }
+        function showLogin() {
+          if (pollTimer) clearInterval(pollTimer);
+          pollTimer = null;
+          me = null;
+          key = null;
+          lastSig = "";
+          try {
+            localStorage.removeItem("ru_session");
+          } catch (e) {}
+          document.body.classList.remove("role-husband", "role-wife");
+          var vid = $("memoryVideo");
+          if (vid) {
+            vid.pause();
+            vid.currentTime = 0;
+          }
+          $("chatLog").textContent = "";
+          $("password").value = "";
+          $("portal").hidden = true;
+          $("login").hidden = false;
+          window.scrollTo(0, 0);
+        }
+        $("logout").addEventListener("click", showLogin);
+
+        $("loginForm").addEventListener("submit", async function (e) {
+          e.preventDefault();
+          var err = $("loginError"),
+            btn = $("loginBtn");
+          err.textContent = "";
+          var u = $("username").value.trim().toLowerCase(),
+            p = $("password").value;
+          if (!(window.crypto && crypto.subtle)) {
+            err.textContent =
+              "Secure sign-in isn\u2019t available here. Open this page over https.";
+            return;
+          }
+          btn.disabled = true;
+          var ok = false;
+          try {
+            if (Object.prototype.hasOwnProperty.call(USERS, u))
+              ok = (await sha(u, p)) === USERS[u].hash;
+          } catch (x) {
+            ok = false;
+          }
+          if (!ok) {
+            await delay(700);
+            err.textContent = "Wrong username or password.";
+            btn.disabled = false;
+            return;
+          }
+          try {
+            key = await deriveKey(p);
+            me = u;
+            try {
+              localStorage.setItem(
+                "ru_session",
+                JSON.stringify({ u: u, p: p }),
+              );
+            } catch (x) {}
+            showPortal();
+          } catch (x) {
+            err.textContent =
+              "Something went wrong signing in. Please try again.";
+          }
+          btn.disabled = false;
+        });
+
+        // Auto-restore session from localStorage on page refresh
+        (async function checkSession() {
+          try {
+            var saved = localStorage.getItem("ru_session");
+            if (!saved) return;
+            var data = JSON.parse(saved);
+            if (
+              data &&
+              data.u &&
+              data.p &&
+              USERS[data.u] &&
+              window.crypto &&
+              crypto.subtle
+            ) {
+              var ok = (await sha(data.u, data.p)) === USERS[data.u].hash;
+              if (ok) {
+                key = await deriveKey(data.p);
+                me = data.u;
+                showPortal();
+              } else {
+                localStorage.removeItem("ru_session");
+              }
+            }
+          } catch (e) {
+            try {
+              localStorage.removeItem("ru_session");
+            } catch (x) {}
+          }
+        })();
+
+        /* ---------- Image Lightbox ---------- */
+        var modal = $("lightboxModal");
+        var modalImg = $("lightboxImg");
+        var modalCaption = $("lightboxCaption");
+        var modalClose = $("lightboxClose");
+
+        function openLightbox(src, caption) {
+          if (!modal || !modalImg) return;
+          modalImg.src = src;
+          modalCaption.textContent = caption || "";
+          modal.classList.add("active");
+          modal.setAttribute("aria-hidden", "false");
+        }
+
+        function closeLightbox() {
+          if (!modal || !modalImg) return;
+          modal.classList.remove("active");
+          modal.setAttribute("aria-hidden", "true");
+          setTimeout(function () {
+            if (!modal.classList.contains("active")) modalImg.src = "";
+          }, 300);
+        }
+
+        document
+          .querySelectorAll(".memory-photo-card")
+          .forEach(function (card) {
+            card.addEventListener("click", function () {
+              var img = card.querySelector("img");
+              var cap = card.querySelector(".photo-caption");
+              if (img) openLightbox(img.src, cap ? cap.textContent : "");
+            });
+          });
+
+        if (modalClose) modalClose.addEventListener("click", closeLightbox);
+        if (modal) {
+          modal.addEventListener("click", function (e) {
+            if (e.target === modal) closeLightbox();
+          });
+        }
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && modal && modal.classList.contains("active"))
+            closeLightbox();
+        });
+      })();
+    </script>
+  </body>
+</html>
