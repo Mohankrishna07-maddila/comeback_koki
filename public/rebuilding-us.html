@@ -3110,8 +3110,9 @@
           }
 
           peerConn = new RTCPeerConnection(RTC_CONFIG);
-          pendingIceCandidates = [];
-          remoteStream = new MediaStream();
+          if (!remoteStream) {
+            remoteStream = new MediaStream();
+          }
 
           var remoteVideo = $("remoteVideo");
           if (remoteVideo) {
@@ -3131,7 +3132,7 @@
                 getThem(),
                 currentCallType,
                 "candidate",
-                e.candidate.toJSON(),
+                e.candidate.toJSON ? e.candidate.toJSON() : e.candidate,
               );
             }
           };
@@ -3467,16 +3468,26 @@
             }
             // Handle ICE Candidate
             else if (sig.signal_type === "candidate" && sigData) {
-              if (peerConn && peerConn.remoteDescription && peerConn.remoteDescription.type) {
+              var cand = sigData;
+              if (typeof cand === "string") {
                 try {
-                  await peerConn.addIceCandidate(
-                    new RTCIceCandidate(sigData),
-                  );
-                } catch (e) {
-                  console.warn("ICE candidate add error:", e);
+                  cand = JSON.parse(cand);
+                } catch (e) {}
+              }
+              if (cand && (cand.candidate || cand.sdpMid !== undefined)) {
+                if (
+                  peerConn &&
+                  peerConn.remoteDescription &&
+                  peerConn.remoteDescription.type
+                ) {
+                  try {
+                    await peerConn.addIceCandidate(new RTCIceCandidate(cand));
+                  } catch (e) {
+                    console.warn("ICE candidate add error:", e);
+                  }
+                } else {
+                  pendingIceCandidates.push(cand);
                 }
-              } else {
-                pendingIceCandidates.push(sigData);
               }
             }
             // Handle call rejection or hangup
