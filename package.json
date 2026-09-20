@@ -3,6 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "node -e \"console.log('Static site build complete')\""
+    "build": "node -e \"const fs = require('fs'); fs.mkdirSync('public', { recursive: true }); fs.copyFileSync('index.html', 'public/index.html'); fs.copyFileSync('rebuilding-us.html', 'public/rebuilding-us.html'); fs.copyFileSync('config.js', 'public/config.js'); fs.cpSync('images', 'public/images', { recursive: true });\""
   }
 }
