@@ -1971,7 +1971,7 @@
             </div>
             <!-- Remote Video / Audio Area -->
             <div class="remote-video-container">
-              <video id="remoteVideo" autoplay playsinline class="remote-video"></video>
+              <video id="remoteVideo" autoplay playsinline muted class="remote-video"></video>
               <audio id="remoteAudio" autoplay playsinline style="position: absolute; width: 1px; height: 1px; opacity: 0.01; pointer-events: none;"></audio>
               <div id="remoteAudioPlaceholder" class="remote-audio-placeholder" style="display: none">
                 <div class="call-avatar" style="margin-bottom: 1rem">🌹</div>
@@ -3073,6 +3073,13 @@
               remoteVideoEl.style.display = "block";
               remotePlaceholder.style.display = "none";
               localVideoContainer.style.display = "block";
+              if (remoteStream && remoteVideoEl.srcObject !== remoteStream) {
+                remoteVideoEl.srcObject = remoteStream;
+              }
+              if (remoteVideoEl) {
+                remoteVideoEl.muted = true;
+                remoteVideoEl.play().catch(function () {});
+              }
             } else {
               remoteVideoEl.style.display = "none";
               remotePlaceholder.style.display = "flex";
@@ -3109,6 +3116,13 @@
           var remoteVideo = $("remoteVideo");
           if (remoteVideo) {
             remoteVideo.srcObject = remoteStream;
+            remoteVideo.muted = true;
+          }
+          var remoteAudio = $("remoteAudio");
+          if (remoteAudio) {
+            remoteAudio.srcObject = remoteStream;
+            remoteAudio.muted = false;
+            remoteAudio.volume = 1.0;
           }
 
           peerConn.onicecandidate = function (e) {
@@ -3129,10 +3143,18 @@
               remoteStream = e.streams[0];
             } else if (e.track) {
               if (!remoteStream) remoteStream = new MediaStream();
-              remoteStream.addTrack(e.track);
+              if (
+                !remoteStream.getTracks().some(function (t) {
+                  return t.id === e.track.id;
+                })
+              ) {
+                remoteStream.addTrack(e.track);
+              }
             }
             if (remoteAudio) {
-              remoteAudio.srcObject = remoteStream;
+              if (remoteAudio.srcObject !== remoteStream) {
+                remoteAudio.srcObject = remoteStream;
+              }
               remoteAudio.muted = false;
               remoteAudio.volume = 1.0;
               remoteAudio.play().catch(function (err) {
@@ -3140,7 +3162,10 @@
               });
             }
             if (remoteVideo) {
-              remoteVideo.srcObject = remoteStream;
+              if (remoteVideo.srcObject !== remoteStream) {
+                remoteVideo.srcObject = remoteStream;
+              }
+              remoteVideo.muted = true;
               remoteVideo.play().catch(function (err) {
                 console.warn("Remote video auto-play catch:", err);
               });
@@ -3148,13 +3173,51 @@
           };
 
           peerConn.oniceconnectionstatechange = function () {
-            console.log("ICE Connection State:", peerConn ? peerConn.iceConnectionState : "closed");
+            console.log(
+              "ICE Connection State:",
+              peerConn ? peerConn.iceConnectionState : "closed",
+            );
           };
 
           if (localStream) {
             localStream.getTracks().forEach(function (track) {
               peerConn.addTrack(track, localStream);
             });
+          }
+        }
+
+        async function getMediaStream(withVideo) {
+          var audioConstraints = {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          };
+          if (!withVideo) {
+            return await navigator.mediaDevices.getUserMedia({
+              audio: audioConstraints,
+              video: false,
+            });
+          }
+          try {
+            return await navigator.mediaDevices.getUserMedia({
+              audio: audioConstraints,
+              video: {
+                facingMode: "user",
+                width: { ideal: 1280, max: 1920 },
+                height: { ideal: 720, max: 1080 },
+              },
+            });
+          } catch (e1) {
+            console.warn("Retrying with simple video constraints:", e1);
+            try {
+              return await navigator.mediaDevices.getUserMedia({
+                audio: audioConstraints,
+                video: true,
+              });
+            } catch (e2) {
+              console.error("Camera access failed completely:", e2);
+              throw e2;
+            }
           }
         }
 
@@ -3165,24 +3228,13 @@
           updateCallUI();
           playRingSound("outgoing");
 
-          var audioConstraints = {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-          };
-
           try {
-            localStream = await navigator.mediaDevices.getUserMedia({
-              audio: audioConstraints,
-              video:
-                type === "video"
-                  ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" }
-                  : false,
-            });
+            localStream = await getMediaStream(type === "video");
             var localVideo = $("localVideo");
             if (localVideo) {
               localVideo.srcObject = localStream;
               localVideo.muted = true;
+              localVideo.play().catch(function () {});
             }
           } catch (err) {
             console.error("Media devices access error:", err);
@@ -3212,24 +3264,13 @@
           if (callState !== "incoming" || !me) return;
           stopRingSound();
 
-          var audioConstraints = {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-          };
-
           try {
-            localStream = await navigator.mediaDevices.getUserMedia({
-              audio: audioConstraints,
-              video:
-                currentCallType === "video"
-                  ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" }
-                  : false,
-            });
+            localStream = await getMediaStream(currentCallType === "video");
             var localVideo = $("localVideo");
             if (localVideo) {
               localVideo.srcObject = localStream;
               localVideo.muted = true;
+              localVideo.play().catch(function () {});
             }
           } catch (err) {
             console.error("Media devices access error:", err);
