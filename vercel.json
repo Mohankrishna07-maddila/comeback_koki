@@ -1,9 +1,8 @@
 {
-  "cleanUrls": true,
   "rewrites": [
     {
-      "source": "/",
-      "destination": "/rebuilding-us.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
