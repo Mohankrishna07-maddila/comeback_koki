@@ -2696,7 +2696,9 @@
           busy = false,
           editingMessage = null,
           lastNotifiedMsgTime = 0,
-          activeMsgToast = null;
+          activeMsgToast = null,
+          knownMessageIds = {};
+
 
         function getThem() {
           return me === "husband" ? "wife" : "husband";
@@ -3354,6 +3356,9 @@
 
           var unreadFromThem = false;
           var items = [];
+          var isInitialFetch = Object.keys(knownMessageIds).length === 0;
+          var newPartnerMessage = null;
+
           for (var i = 0; i < recs.length; i++) {
             var row = recs[i];
             var recData = null;
@@ -3364,9 +3369,20 @@
             }
 
             var sender = row.sender || (recData && recData.from);
+            var isNewArrival = !isInitialFetch && !knownMessageIds[row.id];
+            knownMessageIds[row.id] = true;
+
             if (sender !== me && !row.is_read) {
               unreadFromThem = true;
             }
+
+            var unsealedText = "";
+            var unsealedImg = null;
+            var unsealedTime =
+              recData && recData.t
+                ? recData.t
+                : new Date(row.created_at).getTime();
+            var unsealedEdited = Boolean(recData && recData.edited);
 
             if (recData && recData.iv && recData.ct) {
               var m = await unseal(recData);
@@ -3374,26 +3390,37 @@
                 m &&
                 (typeof m.text === "string" || typeof m.img === "string")
               ) {
+                unsealedText = m.text || "";
+                unsealedImg = m.img || null;
+                unsealedEdited = Boolean(m.edited || recData.edited);
                 items.push({
                   id: row.id,
                   from: m.from || row.sender,
-                  text: m.text || "",
-                  img: m.img || null,
-                  t: recData.t || new Date(row.created_at).getTime(),
+                  text: unsealedText,
+                  img: unsealedImg,
+                  t: unsealedTime,
                   is_read: Boolean(row.is_read || recData.is_read),
-                  edited: Boolean(m.edited || recData.edited),
+                  edited: unsealedEdited,
                 });
               }
             } else if (typeof row.content === "string") {
+              unsealedText = row.content;
               items.push({
                 id: row.id,
                 from: row.sender,
                 text: row.content,
                 img: null,
-                t: new Date(row.created_at).getTime(),
+                t: unsealedTime,
                 is_read: Boolean(row.is_read),
                 edited: false,
               });
+            }
+
+            if (isNewArrival && sender !== me) {
+              newPartnerMessage = {
+                text: unsealedText,
+                img: unsealedImg,
+              };
             }
           }
 
@@ -3405,42 +3432,26 @@
             return a.t - b.t;
           });
 
-          // Single consolidated notification for incoming messages from partner
-          if (lastNotifiedMsgTime > 0) {
-            var newestIncoming = null;
-            for (var k = 0; k < items.length; k++) {
-              var msgItem = items[k];
-              if (msgItem.from !== me && msgItem.t > lastNotifiedMsgTime) {
-                if (!newestIncoming || msgItem.t > newestIncoming.t) {
-                  newestIncoming = msgItem;
-                }
-              }
+          // Single consolidated notification for newly arrived partner messages
+          if (newPartnerMessage) {
+            var partnerName =
+              (USERS[getThem()] && USERS[getThem()].name) || "Partner";
+            var previewText =
+              newPartnerMessage.text ||
+              (newPartnerMessage.img ? "Sent a photo" : "New message");
+
+            playMessageChime();
+
+            if (!isChatVisibleToUser()) {
+              showMessageToast(partnerName, previewText);
+              startTitleFlash("💬 " + partnerName + ": " + previewText);
             }
 
-            if (newestIncoming) {
-              lastNotifiedMsgTime = newestIncoming.t;
-              var partnerName =
-                (USERS[getThem()] && USERS[getThem()].name) || "Partner";
-              var previewText =
-                newestIncoming.text ||
-                (newestIncoming.img ? "Sent a photo" : "New message");
-
-              playMessageChime();
-
-              if (!isChatVisibleToUser()) {
-                showMessageToast(partnerName, previewText);
-                startTitleFlash("💬 " + partnerName + ": " + previewText);
-              }
-
-              triggerNotification(
-                partnerName + " sent a message",
-                previewText,
-                "msg-notif",
-              );
-            }
-          } else if (items.length > 0) {
-            // Initial sync on first load: set baseline timestamp
-            lastNotifiedMsgTime = items[items.length - 1].t;
+            triggerNotification(
+              partnerName + " sent a message",
+              previewText,
+              "msg-notif",
+            );
           }
 
           draw(items);
@@ -3448,12 +3459,12 @@
 
         function isChatVisibleToUser() {
           if (document.hidden) return false;
+          if (typeof document.hasFocus === "function" && !document.hasFocus()) {
+            return false;
+          }
           var portalEl = $("portal");
           var chatEl = $("chat");
           if (!portalEl || portalEl.hidden || !me || !chatEl) return false;
-
-          // If role is husband, his portal is dedicated to the chat
-          if (me === "husband") return true;
 
           // For wife, verify that the chat section is scrolled into the active viewport
           var rect = chatEl.getBoundingClientRect();
@@ -4620,6 +4631,7 @@
           );
           window.scrollTo(0, 0);
           lastSig = "";
+          knownMessageIds = {};
           cancelEdit();
           draw([]);
           setStatus(true);
@@ -4672,10 +4684,12 @@
           me = null;
           key = null;
           lastSig = "";
+          knownMessageIds = {};
           try {
             localStorage.removeItem("ru_session");
           } catch (e) {}
           document.body.classList.remove("role-husband", "role-wife");
+
           var vid = $("memoryVideo");
           if (vid) {
             vid.pause();
