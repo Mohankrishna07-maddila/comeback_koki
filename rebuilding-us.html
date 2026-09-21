@@ -3417,42 +3417,29 @@
             }
 
             if (isNewArrival && sender !== me) {
-              newPartnerMessage = {
-                text: unsealedText,
-                img: unsealedImg,
-              };
-            }
-          }
+              var partnerName =
+                (USERS[getThem()] && USERS[getThem()].name) || "Partner";
+              var previewText =
+                unsealedText || (unsealedImg ? "Sent a photo" : "New message");
 
-          if (unreadFromThem && me && isChatVisibleToUser()) {
-            markMessagesAsRead(getThem());
+              playMessageChime();
+
+              if (!isChatVisibleToUser()) {
+                showMessageToast(partnerName, previewText);
+                startTitleFlash("💬 " + partnerName + ": " + previewText);
+              }
+
+              triggerNotification(
+                partnerName + " sent a message",
+                previewText,
+                "msg-" + row.id,
+              );
+            }
           }
 
           items.sort(function (a, b) {
             return a.t - b.t;
           });
-
-          // Single consolidated notification for newly arrived partner messages
-          if (newPartnerMessage) {
-            var partnerName =
-              (USERS[getThem()] && USERS[getThem()].name) || "Partner";
-            var previewText =
-              newPartnerMessage.text ||
-              (newPartnerMessage.img ? "Sent a photo" : "New message");
-
-            playMessageChime();
-
-            if (!isChatVisibleToUser()) {
-              showMessageToast(partnerName, previewText);
-              startTitleFlash("💬 " + partnerName + ": " + previewText);
-            }
-
-            triggerNotification(
-              partnerName + " sent a message",
-              previewText,
-              "msg-notif",
-            );
-          }
 
           draw(items);
         }
@@ -3475,6 +3462,19 @@
           );
         }
 
+        function markSeenOnUserInteraction() {
+          stopTitleFlash();
+          if (activeMsgToast) {
+            try {
+              activeMsgToast.remove();
+            } catch (e) {}
+            activeMsgToast = null;
+          }
+          if (me) {
+            markMessagesAsRead(getThem());
+          }
+        }
+
         function checkAndMarkSeenIfVisible() {
           stopTitleFlash();
           if (activeMsgToast) {
@@ -3483,19 +3483,35 @@
             } catch (e) {}
             activeMsgToast = null;
           }
-          if (me && isChatVisibleToUser()) {
-            lastSig = "";
-            refresh();
-          }
         }
 
         window.addEventListener("focus", checkAndMarkSeenIfVisible);
         document.addEventListener("visibilitychange", function () {
           if (!document.hidden) checkAndMarkSeenIfVisible();
         });
-        window.addEventListener("scroll", checkAndMarkSeenIfVisible, {
-          passive: true,
-        });
+
+        // Mark messages as Seen ONLY when user genuinely interacts with the chat
+        var chatBoxEl = document.querySelector(".chat-box");
+        var chatInputEl = $("chatInput");
+        var chatLogEl = $("chatLog");
+
+        if (chatBoxEl) {
+          chatBoxEl.addEventListener("click", markSeenOnUserInteraction);
+          chatBoxEl.addEventListener("mouseenter", markSeenOnUserInteraction);
+          chatBoxEl.addEventListener("touchstart", markSeenOnUserInteraction, {
+            passive: true,
+          });
+        }
+        if (chatInputEl) {
+          chatInputEl.addEventListener("focus", markSeenOnUserInteraction);
+          chatInputEl.addEventListener("input", markSeenOnUserInteraction);
+        }
+        if (chatLogEl) {
+          chatLogEl.addEventListener("scroll", markSeenOnUserInteraction, {
+            passive: true,
+          });
+        }
+
 
         var lastTypingSentAt = 0;
         var typingDebounceTimeout = null;
@@ -4351,7 +4367,8 @@
                 body: body,
                 icon: NOTIF_ICON,
                 badge: NOTIF_ICON,
-                tag: tag || "ru-alert",
+                tag: tag ? tag + "-" + Date.now() : "notif-" + Date.now(),
+                renotify: true,
                 requireInteraction: tag === "call-alert",
               });
               notif.onclick = function () {
