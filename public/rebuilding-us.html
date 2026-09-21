@@ -1573,8 +1573,25 @@
             id="whoami"
             style="color: var(--muted); font-size: 0.9rem"
           ></span>
+          <button
+            id="navNotifBtn"
+            class="btn-ghost"
+            type="button"
+            title="Notification Status & Test"
+            style="
+              display: inline-flex;
+              align-items: center;
+              gap: 0.35rem;
+              font-size: 0.82rem;
+              padding: 0.35rem 0.8rem;
+              border-radius: 999px;
+            "
+          >
+            <span id="navNotifIcon">🔔</span>
+            <span id="navNotifLabel">Alerts</span>
+          </button>
           <a href="#memories" class="bar-link wife-only">Memories</a>
-          <a href="#chat" class="bar-link wife-only">Messages</a>
+          <a href="#chat" class="bar-link">Messages</a>
           <button id="logout" class="btn-ghost" type="button">Log out</button>
         </nav>
       </header>
@@ -2006,12 +2023,11 @@
                   id="btnEnableNotifs"
                   class="btn-call"
                   type="button"
-                  title="Enable Browser Pop-up Notifications"
-                  aria-label="Enable Browser Notifications"
-                  style="display: none"
+                  title="Notification Status & Test"
+                  aria-label="Notification Status"
                 >
-                  <span style="font-size: 1rem">🔔</span>
-                  <span>Enable Alerts</span>
+                  <span id="chatNotifIcon" style="font-size: 1rem">🔔</span>
+                  <span id="chatNotifLabel">Alerts</span>
                 </button>
                 <button
                   id="voiceCallBtn"
@@ -4357,34 +4373,71 @@
         var NOTIF_ICON =
           "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23d43d5a'/%3E%3Cpath d='M32 16c-7.7 0-14 6.3-14 14v10l-4 4v2h36v-2l-4-4V30c0-7.7-6.3-14-14-14zm-4 38c0 2.2 1.8 4 4 4s4-1.8 4-4h-8z' fill='%23fff'/%3E%3C/svg%3E";
 
+        // Register Service Worker for reliable native Chrome pop-up notifications
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker.register("./sw.js").catch(function (e) {
+            console.log("Service Worker note:", e);
+          });
+        }
+
+        function fallbackNotification(title, body, tag) {
+          try {
+            var notif = new Notification(title, {
+              body: body,
+              icon: NOTIF_ICON,
+              badge: NOTIF_ICON,
+              tag: tag ? tag + "-" + Date.now() : "notif-" + Date.now(),
+              renotify: true,
+              requireInteraction: tag === "call-alert",
+            });
+            notif.onclick = function () {
+              window.focus();
+              stopTitleFlash();
+              if (tag === "call-alert") {
+                var callModal = $("callModal");
+                if (callModal && callState === "incoming") {
+                  callModal.style.display = "flex";
+                }
+              } else {
+                var chatEl = $("chat");
+                if (chatEl) chatEl.scrollIntoView({ behavior: "smooth" });
+              }
+              try {
+                notif.close();
+              } catch (e) {}
+            };
+          } catch (err) {
+            console.warn("Fallback Notification error:", err);
+          }
+        }
+
         function triggerNotification(title, body, tag) {
           try {
             if (
               "Notification" in window &&
               Notification.permission === "granted"
             ) {
-              var notif = new Notification(title, {
-                body: body,
-                icon: NOTIF_ICON,
-                badge: NOTIF_ICON,
-                tag: tag ? tag + "-" + Date.now() : "notif-" + Date.now(),
-                renotify: true,
-                requireInteraction: tag === "call-alert",
-              });
-              notif.onclick = function () {
-                window.focus();
-                stopTitleFlash();
-                if (tag === "call-alert") {
-                  var callModal = $("callModal");
-                  if (callModal && callState === "incoming") {
-                    callModal.style.display = "flex";
-                  }
-                } else {
-                  var chatEl = $("chat");
-                  if (chatEl) chatEl.scrollIntoView({ behavior: "smooth" });
-                }
-                notif.close();
-              };
+              if (
+                "serviceWorker" in navigator &&
+                navigator.serviceWorker.controller
+              ) {
+                navigator.serviceWorker.ready
+                  .then(function (reg) {
+                    return reg.showNotification(title, {
+                      body: body,
+                      icon: NOTIF_ICON,
+                      badge: NOTIF_ICON,
+                      tag: tag ? tag + "-" + Date.now() : "notif-" + Date.now(),
+                      renotify: true,
+                      requireInteraction: tag === "call-alert",
+                    });
+                  })
+                  .catch(function () {
+                    fallbackNotification(title, body, tag);
+                  });
+              } else {
+                fallbackNotification(title, body, tag);
+              }
             }
           } catch (e) {
             console.warn("Notification error:", e);
@@ -4629,15 +4682,15 @@
           $("chatPartnerName").textContent =
             (USERS[getThem()] && USERS[getThem()].name) || "Partner";
 
-          updateNotificationButton();
-          // Request notification permissions for background alerts
+          updateNotificationUI();
+          // Request notification permissions for background alerts if still default
           if (
             "Notification" in window &&
             Notification.permission === "default"
           ) {
             Notification.requestPermission()
               .then(function () {
-                updateNotificationButton();
+                updateNotificationUI();
               })
               .catch(function () {});
           }
@@ -4661,35 +4714,119 @@
           }, SIGNAL_POLL_MS);
         }
 
-        function updateNotificationButton() {
-          var btn = $("btnEnableNotifs");
-          if (!btn) return;
-          if (
-            "Notification" in window &&
-            Notification.permission === "default"
-          ) {
-            btn.style.display = "inline-flex";
+        function updateNotificationUI() {
+          var state = "unsupported";
+          if ("Notification" in window) {
+            state = Notification.permission;
+          }
+
+          var navBtn = $("navNotifBtn");
+          var chatBtn = $("btnEnableNotifs");
+          var navLabel = $("navNotifLabel");
+          var chatLabel = $("chatNotifLabel");
+          var navIcon = $("navNotifIcon");
+          var chatIcon = $("chatNotifIcon");
+
+          if (state === "granted") {
+            if (navLabel) navLabel.textContent = "Alerts Active";
+            if (chatLabel) chatLabel.textContent = "Alerts Active";
+            if (navIcon) navIcon.textContent = "🔔";
+            if (chatIcon) chatIcon.textContent = "🔔";
+            if (navBtn) {
+              navBtn.title = "Pop-up alerts active. Click to test Chrome notification.";
+              navBtn.style.borderColor = "rgba(46, 213, 115, 0.6)";
+              navBtn.style.color = "#55efc4";
+            }
+            if (chatBtn) {
+              chatBtn.title = "Pop-up alerts active. Click to test Chrome notification.";
+              chatBtn.style.borderColor = "rgba(46, 213, 115, 0.6)";
+              chatBtn.style.color = "#55efc4";
+            }
+          } else if (state === "denied") {
+            if (navLabel) navLabel.textContent = "Alerts Blocked";
+            if (chatLabel) chatLabel.textContent = "Alerts Blocked";
+            if (navIcon) navIcon.textContent = "🔕";
+            if (chatIcon) chatIcon.textContent = "🔕";
+            if (navBtn) {
+              navBtn.title = "Notifications blocked in Chrome. Click for instructions to enable.";
+              navBtn.style.borderColor = "rgba(239, 68, 68, 0.6)";
+              navBtn.style.color = "#ff7675";
+            }
+            if (chatBtn) {
+              chatBtn.title = "Notifications blocked in Chrome. Click for instructions to enable.";
+              chatBtn.style.borderColor = "rgba(239, 68, 68, 0.6)";
+              chatBtn.style.color = "#ff7675";
+            }
           } else {
-            btn.style.display = "none";
+            // "default" / promptable
+            if (navLabel) navLabel.textContent = "Enable Alerts";
+            if (chatLabel) chatLabel.textContent = "Enable Alerts";
+            if (navIcon) navIcon.textContent = "🔔";
+            if (chatIcon) chatIcon.textContent = "🔔";
+            if (navBtn) {
+              navBtn.title = "Click to enable Chrome pop-up alerts.";
+              navBtn.style.borderColor = "rgba(255, 138, 122, 0.5)";
+              navBtn.style.color = "var(--glow)";
+            }
+            if (chatBtn) {
+              chatBtn.title = "Click to enable Chrome pop-up alerts.";
+              chatBtn.style.borderColor = "rgba(255, 138, 122, 0.5)";
+              chatBtn.style.color = "var(--glow)";
+            }
           }
         }
 
-        var btnEnableNotifsEl = $("btnEnableNotifs");
-        if (btnEnableNotifsEl) {
-          btnEnableNotifsEl.addEventListener("click", function () {
-            if ("Notification" in window) {
-              Notification.requestPermission().then(function (perm) {
-                updateNotificationButton();
+        function handleNotificationButtonClick() {
+          if (!("Notification" in window)) {
+            alert("Browser pop-up notifications are not supported in this browser.");
+            return;
+          }
+
+          if (Notification.permission === "granted") {
+            var roleName = (USERS[me] && USERS[me].name) || "User";
+            playMessageChime();
+            showMessageToast("System", "Testing alert popup for " + roleName);
+            triggerNotification(
+              "💖 Notification Test (" + roleName + ")",
+              "Pop-up alerts are working perfectly on this browser!",
+              "test-alert"
+            );
+          } else if (Notification.permission === "denied") {
+            alert(
+              "Notifications are currently blocked in Chrome settings for this page.\n\n" +
+              "To enable Chrome pop-up notifications:\n" +
+              "1. Click the Site Settings / Lock 🔒 icon next to the URL in your Chrome address bar.\n" +
+              "2. Set 'Notifications' to 'Allow'.\n" +
+              "3. Refresh the page."
+            );
+          } else {
+            Notification.requestPermission()
+              .then(function (perm) {
+                updateNotificationUI();
                 if (perm === "granted") {
+                  var roleName = (USERS[me] && USERS[me].name) || "User";
+                  playMessageChime();
+                  showMessageToast("System", "Notifications enabled!");
                   triggerNotification(
                     "Pop-up Alerts Enabled! 💖",
                     "You will now receive Chrome pop-up notifications for calls and messages.",
-                    "msg-notif",
+                    "test-alert"
                   );
                 }
+              })
+              .catch(function (e) {
+                console.warn("Notification permission error:", e);
               });
-            }
-          });
+          }
+        }
+
+        var navNotifBtnEl = $("navNotifBtn");
+        if (navNotifBtnEl) {
+          navNotifBtnEl.addEventListener("click", handleNotificationButtonClick);
+        }
+        var btnEnableNotifsEl = $("btnEnableNotifs");
+        if (btnEnableNotifsEl) {
+          btnEnableNotifsEl.addEventListener("click", handleNotificationButtonClick);
         }
         function showLogin() {
           if (pollTimer) clearInterval(pollTimer);
