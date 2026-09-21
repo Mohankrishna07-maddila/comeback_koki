@@ -905,8 +905,8 @@
       }
       .call-card {
         width: 100%;
-        max-width: 44rem;
-        min-height: 28rem;
+        max-width: 36rem;
+        height: min(78vh, 32rem);
         background: linear-gradient(
           165deg,
           rgba(42, 11, 22, 0.96),
@@ -919,6 +919,14 @@
         position: relative;
         display: flex;
         flex-direction: column;
+        transition: all 0.3s ease;
+      }
+      :fullscreen .call-card,
+      :-webkit-full-screen .call-card {
+        max-width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+        border: none;
       }
       .call-prompt-view {
         flex: 1;
@@ -926,7 +934,7 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 2.5rem 1.5rem;
+        padding: 2rem 1.5rem;
         text-align: center;
       }
       .call-avatar-wrapper {
@@ -1037,14 +1045,33 @@
         position: absolute;
         bottom: 5.5rem;
         right: 1.2rem;
-        width: 130px;
-        height: 95px;
+        width: 110px;
+        height: 80px;
         border-radius: 14px;
         overflow: hidden;
         border: 2px solid rgba(255, 138, 122, 0.4);
         box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
         background: #111;
         z-index: 10;
+        cursor: pointer;
+        transition: transform 0.2s, border-color 0.2s;
+      }
+      .local-video-container:hover {
+        transform: scale(1.06);
+        border-color: var(--neon);
+      }
+      .swap-hint-badge {
+        position: absolute;
+        bottom: 2px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.65);
+        color: #fff;
+        font-size: 0.6rem;
+        padding: 1px 5px;
+        border-radius: 4px;
+        pointer-events: none;
+        white-space: nowrap;
       }
       .local-video {
         width: 100%;
@@ -1062,7 +1089,7 @@
         justify-content: space-between;
         z-index: 10;
         background: rgba(0, 0, 0, 0.45);
-        padding: 0.5rem 1rem;
+        padding: 0.5rem 0.8rem;
         border-radius: 20px;
         backdrop-filter: blur(8px);
         border: 1px solid rgba(255, 138, 122, 0.2);
@@ -1070,6 +1097,85 @@
       .active-call-user {
         font-weight: 600;
         color: var(--glow);
+        font-size: 0.95rem;
+      }
+      .call-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .btn-header-icon {
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 138, 122, 0.3);
+        border-radius: 50%;
+        width: 28px;
+        height: 28px;
+        color: var(--glow);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: transform 0.2s, background 0.2s;
+      }
+      .btn-header-icon:hover {
+        background: rgba(212, 61, 90, 0.6);
+        transform: scale(1.1);
+      }
+      .btn-header-icon.active {
+        background: var(--neon);
+        color: #fff;
+      }
+      .call-notice-view {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem 1.5rem;
+        text-align: center;
+        animation: fadeIn 0.3s ease;
+      }
+      .call-notice-icon {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background: rgba(239, 68, 68, 0.2);
+        border: 2px solid #ef4444;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        margin-bottom: 1.2rem;
+        animation: scaleNotice 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+      @keyframes scaleNotice {
+        0% { transform: scale(0.5); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+      }
+      .call-notice-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--glow);
+        margin-bottom: 0.3rem;
+      }
+      .call-notice-subtitle {
+        font-size: 0.95rem;
+        color: var(--muted);
+      }
+      .call-toast {
+        position: absolute;
+        top: 4.5rem;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(16, 6, 11, 0.92);
+        border: 1px solid rgba(255, 138, 122, 0.4);
+        color: var(--glow);
+        padding: 0.35rem 0.9rem;
+        border-radius: 20px;
+        font-size: 0.82rem;
+        z-index: 20;
+        pointer-events: none;
+        animation: fadeIn 0.25s ease;
       }
       .active-call-timer {
         font-variant-numeric: tabular-nums;
@@ -1968,11 +2074,43 @@
             </div>
           </div>
 
+          <!-- Notice / End Call Animated View -->
+          <div id="callNoticeView" class="call-notice-view" style="display: none">
+            <div id="callNoticeIcon" class="call-notice-icon">📞</div>
+            <div id="callNoticeTitle" class="call-notice-title">Call Ended</div>
+            <div id="callNoticeSubtitle" class="call-notice-subtitle">00:00</div>
+          </div>
+
           <!-- Active Call View -->
           <div id="callActiveView" class="call-active-view" style="display: none">
             <div class="active-call-header">
               <span id="activeCallPartner" class="active-call-user">In call with Wife</span>
-              <span id="activeCallTimer" class="active-call-timer">00:00</span>
+              <div class="call-header-actions">
+                <span id="activeCallTimer" class="active-call-timer">00:00</span>
+                <button
+                  id="btnTogglePip"
+                  type="button"
+                  class="btn-header-icon"
+                  title="Picture in Picture (Floating Tab)"
+                  aria-label="Floating window"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                    <rect x="12" y="9" width="8" height="6" rx="1"></rect>
+                  </svg>
+                </button>
+                <button
+                  id="btnToggleFullscreen"
+                  type="button"
+                  class="btn-header-icon"
+                  title="Toggle Fullscreen"
+                  aria-label="Toggle Fullscreen"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                  </svg>
+                </button>
+              </div>
             </div>
             <!-- Remote Video / Audio Area -->
             <div class="remote-video-container">
@@ -1985,8 +2123,9 @@
               </div>
             </div>
             <!-- Local PIP Video -->
-            <div id="localVideoContainer" class="local-video-container">
+            <div id="localVideoContainer" class="local-video-container" title="Click to swap camera view">
               <video id="localVideo" autoplay playsinline muted class="local-video"></video>
+              <div class="swap-hint-badge">⇄ Swap</div>
             </div>
             <!-- In-Call Control Bar -->
             <div class="active-call-controls">
@@ -3036,22 +3175,71 @@
           );
         }
 
+        var isSwappedVideo = false;
+        var availableVideoDevices = [];
+        var currentVideoDeviceIndex = 0;
+
+        function showCallToast(text) {
+          var existing = document.querySelector(".call-toast");
+          if (existing) existing.remove();
+          var toast = document.createElement("div");
+          toast.className = "call-toast";
+          toast.textContent = text;
+          var card = document.querySelector(".call-card");
+          if (card) {
+            card.appendChild(toast);
+            setTimeout(function () {
+              toast.remove();
+            }, 2500);
+          }
+        }
+
+        function showCallNotice(icon, title, subtitle, onDone) {
+          var promptView = $("callPromptView");
+          var activeView = $("callActiveView");
+          var noticeView = $("callNoticeView");
+          var noticeIcon = $("callNoticeIcon");
+          var noticeTitle = $("callNoticeTitle");
+          var noticeSubtitle = $("callNoticeSubtitle");
+
+          if (promptView) promptView.style.display = "none";
+          if (activeView) activeView.style.display = "none";
+          if (noticeView) {
+            if (noticeIcon) noticeIcon.textContent = icon || "📞";
+            if (noticeTitle) noticeTitle.textContent = title || "Call Ended";
+            if (noticeSubtitle) noticeSubtitle.textContent = subtitle || "";
+            noticeView.style.display = "flex";
+          }
+
+          setTimeout(function () {
+            if (noticeView) noticeView.style.display = "none";
+            if (typeof onDone === "function") onDone();
+          }, 1600);
+        }
+
         function updateCallUI() {
           var modal = $("callModal");
           var promptView = $("callPromptView");
           var activeView = $("callActiveView");
+          var noticeView = $("callNoticeView");
           var btnAccept = $("btnAcceptCall");
           var partnerName = (USERS[getThem()] && USERS[getThem()].name) || "Koki";
 
           if (callState === "idle") {
+            if (noticeView && noticeView.style.display === "flex") {
+              // Let notice finish animating
+              return;
+            }
             modal.classList.remove("active");
             modal.style.display = "none";
             promptView.style.display = "none";
             activeView.style.display = "none";
+            if (noticeView) noticeView.style.display = "none";
             stopRingSound();
             return;
           }
 
+          if (noticeView) noticeView.style.display = "none";
           modal.style.display = "flex";
           modal.offsetWidth;
           modal.classList.add("active");
@@ -3087,6 +3275,7 @@
             var localVideoContainer = $("localVideoContainer");
             var btnFlipCam = $("btnFlipCam");
             var btnToggleCam = $("btnToggleCam");
+            var btnTogglePip = $("btnTogglePip");
 
             if (currentCallType === "video") {
               remoteVideoEl.style.display = "block";
@@ -3094,13 +3283,8 @@
               localVideoContainer.style.display = "block";
               if (btnFlipCam) btnFlipCam.style.display = "flex";
               if (btnToggleCam) btnToggleCam.style.display = "flex";
-              if (remoteStream && remoteVideoEl.srcObject !== remoteStream) {
-                remoteVideoEl.srcObject = remoteStream;
-              }
-              if (remoteVideoEl) {
-                remoteVideoEl.muted = true;
-                remoteVideoEl.play().catch(function () {});
-              }
+              if (btnTogglePip) btnTogglePip.style.display = "flex";
+              syncVideoElements();
             } else {
               remoteVideoEl.style.display = "none";
               remotePlaceholder.style.display = "flex";
@@ -3108,8 +3292,46 @@
               localVideoContainer.style.display = "none";
               if (btnFlipCam) btnFlipCam.style.display = "none";
               if (btnToggleCam) btnToggleCam.style.display = "none";
+              if (btnTogglePip) btnTogglePip.style.display = "none";
             }
           }
+        }
+
+        function syncVideoElements() {
+          var remoteVideo = $("remoteVideo");
+          var localVideo = $("localVideo");
+          if (!remoteVideo || !localVideo) return;
+
+          var mainStream = isSwappedVideo ? localStream : remoteStream;
+          var pipStream = isSwappedVideo ? remoteStream : localStream;
+
+          if (remoteVideo.srcObject !== mainStream) {
+            remoteVideo.srcObject = mainStream;
+          }
+          if (localVideo.srcObject !== pipStream) {
+            localVideo.srcObject = pipStream;
+          }
+
+          // Mirror handling: mirror if viewing user's own front-facing camera
+          if (isSwappedVideo) {
+            remoteVideo.style.transform = currentFacingMode === "user" ? "scaleX(-1)" : "scaleX(1)";
+            localVideo.style.transform = "scaleX(1)";
+          } else {
+            remoteVideo.style.transform = "scaleX(1)";
+            localVideo.style.transform = currentFacingMode === "user" ? "scaleX(-1)" : "scaleX(1)";
+          }
+
+          remoteVideo.muted = true;
+          localVideo.muted = true;
+          remoteVideo.play().catch(function () {});
+          localVideo.play().catch(function () {});
+        }
+
+        function swapVideoViews() {
+          if (currentCallType !== "video") return;
+          isSwappedVideo = !isSwappedVideo;
+          syncVideoElements();
+          showCallToast(isSwappedVideo ? "Viewing your camera in main view" : "Viewing partner in main view");
         }
 
         async function drainPendingIceCandidates() {
@@ -3186,13 +3408,7 @@
               });
             }
             if (remoteVideo) {
-              if (remoteVideo.srcObject !== remoteStream) {
-                remoteVideo.srcObject = remoteStream;
-              }
-              remoteVideo.muted = true;
-              remoteVideo.play().catch(function (err) {
-                console.warn("Remote video auto-play catch:", err);
-              });
+              syncVideoElements();
             }
           };
 
@@ -3212,6 +3428,19 @@
 
         var currentFacingMode = "user"; // 'user' (front) | 'environment' (back)
 
+        async function refreshVideoDevices() {
+          try {
+            if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+              var allDevs = await navigator.mediaDevices.enumerateDevices();
+              availableVideoDevices = allDevs.filter(function (d) {
+                return d.kind === "videoinput";
+              });
+            }
+          } catch (e) {
+            console.warn("Enumerate devices error:", e);
+          }
+        }
+
         async function getMediaStream(withVideo) {
           var audioConstraints = {
             echoCancellation: true,
@@ -3224,6 +3453,9 @@
               video: false,
             });
           }
+
+          await refreshVideoDevices();
+
           try {
             return await navigator.mediaDevices.getUserMedia({
               audio: audioConstraints,
@@ -3238,7 +3470,7 @@
             try {
               return await navigator.mediaDevices.getUserMedia({
                 audio: audioConstraints,
-                video: { facingMode: currentFacingMode },
+                video: true,
               });
             } catch (e2) {
               console.error("Camera access failed completely:", e2);
@@ -3249,69 +3481,125 @@
 
         async function flipCam() {
           if (!localStream || currentCallType !== "video") return;
-          var nextFacingMode =
-            currentFacingMode === "user" ? "environment" : "user";
-          var newStream = null;
+          await refreshVideoDevices();
 
-          try {
+          var newStream = null;
+          var nextFacingMode = currentFacingMode === "user" ? "environment" : "user";
+
+          // If multiple camera devices exist, cycle through device IDs
+          if (availableVideoDevices.length > 1) {
+            currentVideoDeviceIndex = (currentVideoDeviceIndex + 1) % availableVideoDevices.length;
+            var targetDevice = availableVideoDevices[currentVideoDeviceIndex];
             try {
               newStream = await navigator.mediaDevices.getUserMedia({
                 audio: false,
                 video: {
-                  facingMode: { exact: nextFacingMode },
+                  deviceId: { exact: targetDevice.deviceId },
                   width: { ideal: 1280, max: 1920 },
                   height: { ideal: 720, max: 1080 },
                 },
               });
+              currentFacingMode = currentVideoDeviceIndex === 0 ? "user" : "environment";
             } catch (e1) {
+              console.warn("Target deviceId switch failed, falling back to facingMode:", e1);
+            }
+          }
+
+          // Fallback to ideal facingMode if deviceId switch was not applicable or failed
+          if (!newStream) {
+            try {
               newStream = await navigator.mediaDevices.getUserMedia({
                 audio: false,
-                video: { facingMode: nextFacingMode },
+                video: {
+                  facingMode: { ideal: nextFacingMode },
+                  width: { ideal: 1280, max: 1920 },
+                  height: { ideal: 720, max: 1080 },
+                },
               });
-            }
-
-            var newVideoTrack = newStream.getVideoTracks()[0];
-            if (!newVideoTrack) return;
-
-            var oldVideoTrack = localStream.getVideoTracks()[0];
-
-            if (peerConn) {
-              var senders = peerConn.getSenders();
-              for (var i = 0; i < senders.length; i++) {
-                if (senders[i].track && senders[i].track.kind === "video") {
-                  await senders[i].replaceTrack(newVideoTrack);
-                  break;
-                }
+              currentFacingMode = nextFacingMode;
+            } catch (e2) {
+              try {
+                newStream = await navigator.mediaDevices.getUserMedia({
+                  audio: false,
+                  video: true,
+                });
+              } catch (e3) {
+                console.error("Flip camera error:", e3);
+                showCallToast("Only 1 camera available on this device");
+                return;
               }
             }
+          }
 
-            if (oldVideoTrack) {
-              oldVideoTrack.stop();
-              localStream.removeTrack(oldVideoTrack);
+          var newVideoTrack = newStream.getVideoTracks()[0];
+          if (!newVideoTrack) return;
+
+          var oldVideoTrack = localStream.getVideoTracks()[0];
+
+          if (peerConn) {
+            var senders = peerConn.getSenders();
+            for (var i = 0; i < senders.length; i++) {
+              if (senders[i].track && senders[i].track.kind === "video") {
+                await senders[i].replaceTrack(newVideoTrack);
+                break;
+              }
             }
+          }
 
-            localStream.addTrack(newVideoTrack);
-            currentFacingMode = nextFacingMode;
+          if (oldVideoTrack) {
+            oldVideoTrack.stop();
+            localStream.removeTrack(oldVideoTrack);
+          }
 
-            var localVideo = $("localVideo");
-            if (localVideo) {
-              localVideo.srcObject = localStream;
-              localVideo.style.transform =
-                currentFacingMode === "user" ? "scaleX(-1)" : "scaleX(1)";
-            }
+          localStream.addTrack(newVideoTrack);
+          syncVideoElements();
 
-            var btnFlip = $("btnFlipCam");
-            if (btnFlip) {
-              btnFlip.classList.toggle(
-                "active",
-                currentFacingMode === "environment",
-              );
-            }
-          } catch (err) {
-            console.error("Flip camera error:", err);
-            alert(
-              "Unable to switch camera. Back camera may not be available on this device.",
+          var btnFlip = $("btnFlipCam");
+          if (btnFlip) {
+            btnFlip.classList.toggle(
+              "active",
+              currentFacingMode === "environment",
             );
+          }
+          showCallToast(
+            currentFacingMode === "environment"
+              ? "Switched to Back Camera"
+              : "Switched to Front Camera",
+          );
+        }
+
+        function toggleCallFullscreen() {
+          var modal = $("callModal");
+          if (!modal) return;
+          if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+            if (modal.requestFullscreen) {
+              modal.requestFullscreen().catch(function () {});
+            } else if (modal.webkitRequestFullscreen) {
+              modal.webkitRequestFullscreen();
+            }
+          } else {
+            if (document.exitFullscreen) {
+              document.exitFullscreen().catch(function () {});
+            } else if (document.webkitExitFullscreen) {
+              document.webkitExitFullscreen();
+            }
+          }
+        }
+
+        async function toggleCallPip() {
+          var remoteVideo = $("remoteVideo");
+          if (!remoteVideo) return;
+          try {
+            if (document.pictureInPictureElement) {
+              await document.exitPictureInPicture();
+            } else if (document.pictureInPictureEnabled) {
+              await remoteVideo.requestPictureInPicture();
+            } else {
+              showCallToast("Picture-in-Picture not supported by your browser");
+            }
+          } catch (e) {
+            console.warn("PIP toggle error:", e);
+            showCallToast("Picture-in-Picture error");
           }
         }
 
@@ -3319,6 +3607,7 @@
           if (callState !== "idle" || !me) return;
           currentCallType = type;
           callState = "outgoing";
+          isSwappedVideo = false;
           updateCallUI();
           playRingSound("outgoing");
 
@@ -3337,7 +3626,7 @@
             alert(
               "Unable to access camera/microphone. Please check device permissions.",
             );
-            endCall(true);
+            endCall(true, "Permission Denied");
             return;
           }
 
@@ -3401,10 +3690,13 @@
 
         function declineCall() {
           postSignal(getThem(), currentCallType, "reject", {});
-          endCall(false);
+          endCall(false, "Call Declined");
         }
 
-        function endCall(sendHangupSignal) {
+        function endCall(sendHangupSignal, noticeReason) {
+          var prevState = callState;
+          var durationStr = formatCallDuration(callSeconds);
+
           if (sendHangupSignal && me) {
             postSignal(getThem(), currentCallType, "hangup", {});
           }
@@ -3414,8 +3706,6 @@
             clearInterval(callTimerInterval);
             callTimerInterval = null;
           }
-          callSeconds = 0;
-          $("activeCallTimer").textContent = "00:00";
 
           if (localStream) {
             localStream.getTracks().forEach(function (t) {
@@ -3430,6 +3720,7 @@
             peerConn = null;
           }
           currentFacingMode = "user";
+          isSwappedVideo = false;
           var localVideo = $("localVideo");
           if (localVideo) {
             localVideo.srcObject = null;
@@ -3440,10 +3731,42 @@
           var remoteAudio = $("remoteAudio");
           if (remoteAudio) remoteAudio.srcObject = null;
 
-          callState = "idle";
+          if (document.pictureInPictureElement) {
+            document.exitPictureInPicture().catch(function () {});
+          }
+          if (document.fullscreenElement || document.webkitFullscreenElement) {
+            if (document.exitFullscreen) document.exitFullscreen().catch(function () {});
+          }
+
           activeSignalOffer = null;
           pendingIceCandidates = [];
-          updateCallUI();
+
+          // Animate notice if active or requested
+          if (noticeReason || prevState === "connected" || prevState === "outgoing" || prevState === "incoming") {
+            var icon = "📞";
+            var title = noticeReason || "Call Ended";
+            var subtitle = prevState === "connected" ? "Duration: " + durationStr : "";
+            if (noticeReason === "Call Declined" || noticeReason === "Declined") {
+              icon = "🚫";
+              title = "Call Declined";
+              subtitle = "Partner declined the call";
+            } else if (prevState === "outgoing" && !noticeReason) {
+              icon = "📵";
+              title = "Call Ended";
+              subtitle = "No answer";
+            }
+            callSeconds = 0;
+            $("activeCallTimer").textContent = "00:00";
+            showCallNotice(icon, title, subtitle, function () {
+              callState = "idle";
+              updateCallUI();
+            });
+          } else {
+            callSeconds = 0;
+            $("activeCallTimer").textContent = "00:00";
+            callState = "idle";
+            updateCallUI();
+          }
         }
 
         function startCallTimer() {
@@ -3463,6 +3786,7 @@
           if (audioTrack) {
             audioTrack.enabled = !audioTrack.enabled;
             $("btnToggleMic").classList.toggle("off", !audioTrack.enabled);
+            showCallToast(audioTrack.enabled ? "Microphone On" : "Microphone Muted");
           }
         }
 
@@ -3472,6 +3796,7 @@
           if (videoTrack) {
             videoTrack.enabled = !videoTrack.enabled;
             $("btnToggleCam").classList.toggle("off", !videoTrack.enabled);
+            showCallToast(videoTrack.enabled ? "Camera On" : "Camera Off");
           }
         }
 
@@ -3595,7 +3920,7 @@
             else if (sig.signal_type === "reject" || sig.signal_type === "hangup") {
               stopTitleFlash();
               if (callState !== "idle") {
-                endCall(false);
+                endCall(false, sig.signal_type === "reject" ? "Call Declined" : "Call Ended");
               }
             }
             // Handle real-time typing animation signal
@@ -3663,6 +3988,18 @@
         $("btnToggleMic").addEventListener("click", toggleMic);
         $("btnToggleCam").addEventListener("click", toggleCam);
         $("btnFlipCam").addEventListener("click", flipCam);
+        var btnToggleFullscreen = $("btnToggleFullscreen");
+        if (btnToggleFullscreen) {
+          btnToggleFullscreen.addEventListener("click", toggleCallFullscreen);
+        }
+        var btnTogglePip = $("btnTogglePip");
+        if (btnTogglePip) {
+          btnTogglePip.addEventListener("click", toggleCallPip);
+        }
+        var localVideoContainer = $("localVideoContainer");
+        if (localVideoContainer) {
+          localVideoContainer.addEventListener("click", swapVideoViews);
+        }
 
         /* ---------- Dynamic Media Base URL (Supabase Storage / CDN) ---------- */
         function applyMediaBaseUrl() {
